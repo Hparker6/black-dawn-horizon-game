@@ -16,7 +16,7 @@ function navStyle(active) {
   };
 }
 
-export default function Ribbon({ tab, onTabSurvival, onTabLeader, onTabAch, onExitToTitle }) {
+export default function Ribbon({ tab, onTabSurvival, onTabLeader, onTabAch, onTabEndings, onExitToTitle }) {
   return (
     <header
       style={{
@@ -46,6 +46,9 @@ export default function Ribbon({ tab, onTabSurvival, onTabLeader, onTabAch, onEx
         </button>
         <button onClick={onTabAch} style={navStyle(tab === "achievements")}>
           ACHIEVEMENTS
+        </button>
+        <button onClick={onTabEndings} style={navStyle(tab === "endings")}>
+          ENDINGS
         </button>
       </nav>
     </header>

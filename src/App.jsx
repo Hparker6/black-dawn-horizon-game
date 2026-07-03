@@ -4,8 +4,9 @@ import { DRAFT } from "./data/items.js";
 import { EVENTS } from "./data/events.js";
 import { diff } from "./engine/difficulty.js";
 import { shuffleFour, applyCardPick, contributorsForStat } from "./engine/draft.js";
-import { rollD10, resolveCheck, applyResult, sampleRunEvents, unlockFlagEvents } from "./engine/events.js";
+import { rollD10, resolveCheck, applyResult, pickNextEvent } from "./engine/events.js";
 import { tier, unlockAchievements } from "./engine/scoring.js";
+import { ENDINGS, SECRET_ENDINGS } from "./data/endings.js";
 import { shareRun, SHARE_LABEL_DEFAULT, SHARE_LABEL_SHARED, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
 import { trackEvent } from "./engine/analytics.js";
 
@@ -20,6 +21,7 @@ import Events from "./screens/Events.jsx";
 import Results from "./screens/Results.jsx";
 import Leaderboard from "./screens/Leaderboard.jsx";
 import Achievements from "./screens/Achievements.jsx";
+import EndingsCollection from "./screens/EndingsCollection.jsx";
 
 // These were editor "props" (data-props) on the original DCLogic component.
 // The source has no settings UI, so they're pinned here as constants —
@@ -37,8 +39,11 @@ const PICK_DELAY_MS = 620;
 const DICE_TICK_MS = REDUCE_MOTION ? 260 : 65;
 const DICE_TOTAL_MS = REDUCE_MOTION ? 320 : 700;
 
-// How many non-final events a single run draws from the pool (plus the
-// final event, always last). See sampleRunEvents() in engine/events.js.
+// How many non-final events a single run targets from the pool (plus the
+// final event, always last). The run doesn't draw this list up front — see
+// pickNextEvent() in engine/events.js — it's just the countdown that tells
+// pickNextEvent when to stop offering non-final events and hand back "The
+// Signal" instead.
 const MIN_RUN_EVENTS = 12;
 const MAX_RUN_EVENTS = 15;
 
@@ -55,6 +60,7 @@ function initialState() {
     best: 0,
     played: 0,
     ach: [],
+    endingsFound: [],
     draftRound: 0,
     draftPhase: "idle",
     draftCards: [],
@@ -68,9 +74,11 @@ function initialState() {
     day: 0,
     eventIndex: 0,
     runEvents: [],
+    runEventsTarget: 0,
     // Consequences set by choices that persist for the rest of the run —
-    // see engine/flags.js. Gates later choices/events, and can unlock
-    // callback events mid-run (see unlockFlagEvents in engine/events.js).
+    // see engine/flags.js. Gates later choices/events, and picks up
+    // callback events mid-run the moment their flags are satisfied (see
+    // pickNextEvent in engine/events.js).
     flags: [],
     log: [],
     ending: null,
@@ -79,6 +87,7 @@ function initialState() {
     runClutch: false,
     runFailed: false,
     newAch: 0,
+    newEnding: false,
     showDice: false,
     dice: null,
     reacting: false,
@@ -101,7 +110,8 @@ export default function App() {
       const best = +localStorage.getItem("bdh_best") || 0;
       const played = +localStorage.getItem("bdh_played") || 0;
       const ach = JSON.parse(localStorage.getItem("bdh_ach") || "[]");
-      setState((prev) => ({ ...prev, best, played, ach }));
+      const endingsFound = JSON.parse(localStorage.getItem("bdh_endings") || "[]");
+      setState((prev) => ({ ...prev, best, played, ach, endingsFound }));
     } catch (e) {}
   }, []);
 
@@ -109,6 +119,7 @@ export default function App() {
   const onTabSurvival = () => setState((prev) => ({ ...prev, tab: "survival" }));
   const onTabLeader = () => setState((prev) => ({ ...prev, tab: "leaderboard" }));
   const onTabAch = () => setState((prev) => ({ ...prev, tab: "achievements" }));
+  const onTabEndings = () => setState((prev) => ({ ...prev, tab: "endings" }));
 
   // ---------- draft flow ----------
   const onPlay = () => {
@@ -177,12 +188,14 @@ export default function App() {
         if (prev.draftRound < DRAFT.length - 1) {
           return { ...prev, draftRound: prev.draftRound + 1, draftPhase: "idle", draftCards: [], pickedId: null, ...updated };
         }
-        const runEvents = sampleRunEvents(EVENTS, MIN_RUN_EVENTS + Math.floor(Math.random() * (MAX_RUN_EVENTS - MIN_RUN_EVENTS + 1)), prev.flags);
+        const runEventsTarget = MIN_RUN_EVENTS + Math.floor(Math.random() * (MAX_RUN_EVENTS - MIN_RUN_EVENTS + 1));
+        const firstEvent = pickNextEvent({ allEvents: EVENTS, usedTitles: [], flags: [], remainingSlots: runEventsTarget });
         return {
           ...prev,
           screen: "event",
           eventIndex: 0,
-          runEvents,
+          runEvents: [firstEvent],
+          runEventsTarget,
           draftPhase: "idle",
           draftCards: [],
           pickedId: null,
@@ -196,6 +209,7 @@ export default function App() {
           runClutch: false,
           runFailed: false,
           newAch: 0,
+          newEnding: false,
           showDice: false,
           dice: null,
           reacting: false,
@@ -221,7 +235,7 @@ export default function App() {
       startDice(choice, eventTitle);
       return;
     }
-    const applied = applyResult(state, choice.result, DIFFICULTY);
+    const applied = applyResult(state, choice.result, DIFFICULTY, SECRET_ENDINGS);
     trackEvent("choice_selected", {
       event_title: eventTitle,
       choice_text: choice.text,
@@ -237,9 +251,6 @@ export default function App() {
       ending: applied.ending,
       gameOver: applied.gameOver,
       flags: applied.flags,
-      // A flag this choice just set may make a callback event eligible —
-      // splice it into the run's remaining sequence if so.
-      runEvents: unlockFlagEvents(prev.runEvents, prev.eventIndex, applied.flags, EVENTS),
       log: [...prev.log, applied.logEntry],
       reacting: true,
       reaction: choice.result,
@@ -261,7 +272,7 @@ export default function App() {
       const cur = stateRef.current;
       const { roll, bonus, needed, total, success } = resolveCheck(choice.check, cur.stats, DIFFICULTY);
       const res = success ? choice.success : choice.fail;
-      const applied = applyResult(cur, res, DIFFICULTY);
+      const applied = applyResult(cur, res, DIFFICULTY, SECRET_ENDINGS);
       trackEvent("choice_selected", {
         event_title: eventTitle,
         choice_text: choice.text,
@@ -279,7 +290,6 @@ export default function App() {
         ending: applied.ending,
         gameOver: applied.gameOver,
         flags: applied.flags,
-        runEvents: unlockFlagEvents(prev.runEvents, prev.eventIndex, applied.flags, EVENTS),
         log: [...prev.log, applied.logEntry],
         dice: { phase: "done", roll, bonus, total, needed, success, label: choice.check.label, contributors, msg: res.msg, tag: res.tag },
         runClutch: prev.runClutch || (success && needed >= 10),
@@ -290,19 +300,30 @@ export default function App() {
 
   // Shared by the dice CONTINUE button and the trait/plain auto-advance
   // timer. Reads stateRef (not the `state` closure) so it's correct even
-  // when fired from a setTimeout scheduled several renders ago.
+  // when fired from a setTimeout scheduled several renders ago. Picks the
+  // next event live, against the run's current flags — a callback event
+  // that just became eligible (because the choice that resolved a moment
+  // ago set its flag) is simply one of the options pickNextEvent can now
+  // draw, no separate "unlock" step required.
   const finishOrAdvance = () => {
     const cur = stateRef.current;
     if (cur.gameOver) {
       finish(cur);
       return;
     }
-    const ni = cur.eventIndex + 1;
-    if (ni >= cur.runEvents.length) {
-      finish(cur);
-      return;
-    }
-    setState((prev) => ({ ...prev, eventIndex: ni, showDice: false, dice: null, reacting: false, reaction: null }));
+    const usedTitles = cur.runEvents.map((e) => e.title);
+    const playedNonFinal = cur.runEvents.filter((e) => !e.final).length;
+    const remainingSlots = cur.runEventsTarget - playedNonFinal;
+    const next = pickNextEvent({ allEvents: EVENTS, usedTitles, flags: cur.flags, remainingSlots });
+    setState((prev) => ({
+      ...prev,
+      runEvents: [...prev.runEvents, next],
+      eventIndex: prev.eventIndex + 1,
+      showDice: false,
+      dice: null,
+      reacting: false,
+      reaction: null,
+    }));
   };
 
   const onContinue = () => finishOrAdvance();
@@ -318,6 +339,15 @@ export default function App() {
       runClutch: snapshot.runClutch,
       runFailed: snapshot.runFailed,
     });
+    // Endings Collection tracking: any named ending this run landed on
+    // (whether a base one from the final event's dice/trait choice, or a
+    // secret one resolved via flags) gets marked discovered. The generic
+    // fallback death (ending stays null — died anywhere but the final
+    // event) has no stable id in ENDINGS, so it's never tracked here; the
+    // collection is for named endings specifically.
+    const matchedEnding = snapshot.ending ? ENDINGS.find((e) => e.label === snapshot.ending) : null;
+    const newEnding = !!matchedEnding && !snapshot.endingsFound.includes(matchedEnding.id);
+    const endingsFound = matchedEnding ? Array.from(new Set([...snapshot.endingsFound, matchedEnding.id])) : snapshot.endingsFound;
     // days_survived/ending_reached/highest_day live as parameters on this one
     // event rather than separate hits — GA4's Explore reports break down and
     // average event parameters directly, so "average days survived" or "most
@@ -330,13 +360,15 @@ export default function App() {
       difficulty: DIFFICULTY,
       is_new_best: snapshot.day > snapshot.best,
       new_achievements: newAch,
+      new_ending: newEnding,
     });
     try {
       localStorage.setItem("bdh_best", String(best));
       localStorage.setItem("bdh_played", String(played));
       localStorage.setItem("bdh_ach", JSON.stringify(ach));
+      localStorage.setItem("bdh_endings", JSON.stringify(endingsFound));
     } catch (e) {}
-    setState((prev) => ({ ...prev, screen: "results", played, best, ach, newAch, showDice: false, dice: null, reacting: false, reaction: null }));
+    setState((prev) => ({ ...prev, screen: "results", played, best, ach, newAch, endingsFound, newEnding, showDice: false, dice: null, reacting: false, reaction: null }));
   };
 
   const onShare = async () => {
@@ -379,7 +411,7 @@ export default function App() {
       />
 
       <div style={{ position: "relative", width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", gap: "10px" }}>
-        <Ribbon tab={state.tab} onTabSurvival={onTabSurvival} onTabLeader={onTabLeader} onTabAch={onTabAch} onExitToTitle={onExitToTitle} />
+        <Ribbon tab={state.tab} onTabSurvival={onTabSurvival} onTabLeader={onTabLeader} onTabAch={onTabAch} onTabEndings={onTabEndings} onExitToTitle={onExitToTitle} />
 
         <div
           style={{
@@ -454,7 +486,7 @@ export default function App() {
                         </div>
                         <ConditionBar hp={state.hp} hpMax={state.hpMax} />
                       </div>
-                      <ProgressTrail current={state.eventIndex} total={state.runEvents.length} />
+                      <ProgressTrail current={state.eventIndex} total={state.runEventsTarget + 1} />
                     </div>
                     <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
                       <Events event={currentEvent} traits={state.traits} flags={state.flags} difficulty={DIFFICULTY} reacting={state.reacting} reaction={state.reaction} onChoose={chooseOption} />
@@ -496,8 +528,8 @@ export default function App() {
                       tier={currentTier}
                       ending={state.ending}
                       newAch={state.newAch}
+                      newEnding={state.newEnding}
                       loadout={state.loadout}
-                      log={state.log}
                       shareLabel={state.shareLabel}
                       onShare={onShare}
                       onAgain={onAgain}
@@ -510,6 +542,7 @@ export default function App() {
 
           {state.tab === "leaderboard" && <Leaderboard best={state.best} />}
           {state.tab === "achievements" && <Achievements unlocked={state.ach} />}
+          {state.tab === "endings" && <EndingsCollection discovered={state.endingsFound} />}
         </div>
       </div>
     </div>

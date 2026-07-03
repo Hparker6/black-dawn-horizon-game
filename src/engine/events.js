@@ -1,59 +1,32 @@
 // Verbatim port of DCLogic's chooseOption / startDice / applyRes / buildChoices logic.
 import { diff } from "./difficulty.js";
 import { flagsAllow, addFlags } from "./flags.js";
+import { resolveSecretEnding } from "./endings.js";
 
 export function rollD10() {
   return 1 + Math.floor(Math.random() * 10);
 }
 
-// Picks a random subset of non-final events for one run, then appends the
-// final event (if any) last. This is new: the ported source always walked
-// EVENTS start-to-finish in fixed order. With the pool grown to ~28, playing
-// all of them every run would be both repetitive-free-in-name-only (same
-// fixed order every time) and much longer than the original pacing, so a run
-// now draws `count` events at random instead. Nothing about draft, dice,
-// scoring, or difficulty changed — only which events a given run sees.
+// Picks ONE event at a time, re-evaluating eligibility against the run's
+// CURRENT flags every time it's called — not a fixed sequence drawn once at
+// run start. That's what lets a flag set mid-run make its callback event
+// eligible for the very next draw: the callback wasn't in a pre-picked list
+// to begin with, it just becomes one of the eligible options the moment its
+// flags are satisfied.
 //
-// `flags` gates which events are even eligible for the initial draw — an
-// event with requiresFlags can't be drawn here since flags is always empty
-// at run start (nothing has happened yet). Those events only enter play via
-// unlockFlagEvents() below, once their flag actually gets set mid-run. The
-// final event is exempt from flag gating on purpose: a run always needs a
-// valid ending regardless of which flags did or didn't get set.
-export function sampleRunEvents(events, count, flags = []) {
-  const finalEvent = events.find((e) => e.final);
-  const pool = events.filter((e) => !e.final && flagsAllow(e, flags));
-  const shuffled = [...pool];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const picked = shuffled.slice(0, Math.min(count, shuffled.length));
-  return finalEvent ? [...picked, finalEvent] : picked;
-}
-
-// Called after every flag change. Checks the full event pool for anything
-// that (a) now qualifies given the run's current flags, (b) requires at
-// least one flag (so it's a genuine callback, not a normal event), and
-// (c) isn't already somewhere in this run's sequence — then splices it in a
-// few events ahead of where the player currently is, always before the
-// final event. This is what makes "earlier choices unlock a later event"
-// possible despite the run's sequence being drawn once at the start: the
-// callback wasn't eligible at draw time (its flag didn't exist yet), so it
-// gets inserted the moment it becomes eligible instead.
-export function unlockFlagEvents(runEvents, eventIndex, flags, allEvents) {
-  const candidates = allEvents.filter(
-    (e) => !e.final && e.requiresFlags && e.requiresFlags.length > 0 && !runEvents.includes(e) && flagsAllow(e, flags)
-  );
-  if (candidates.length === 0) return runEvents;
-
-  const offset = 2 + Math.floor(Math.random() * 3); // 2-4 events ahead: not instant, not buried
-  const lastIndex = runEvents.length - 1; // final event's slot — never insert after it
-  const insertAt = Math.min(eventIndex + 1 + offset, lastIndex);
-
-  const next = [...runEvents];
-  next.splice(insertAt, 0, ...candidates);
-  return next;
+// `remainingSlots` counts down the run's planned non-final event count
+// (decided once at run start — see runEventsTarget in App.jsx); once it
+// hits 0, or once there's nothing left eligible to draw (pool exhausted by
+// excludeFlags/usedTitles), the final event is returned — a run always ends
+// on "The Signal," which is exempt from flag gating for exactly this
+// reason: it must always be a valid pick, regardless of which flags did or
+// didn't get set. `usedTitles` guarantees no event repeats within a run.
+export function pickNextEvent({ allEvents, usedTitles, flags, remainingSlots }) {
+  const finalEvent = allEvents.find((e) => e.final);
+  if (remainingSlots <= 0) return finalEvent;
+  const eligible = allEvents.filter((e) => !e.final && !usedTitles.includes(e.title) && flagsAllow(e, flags));
+  if (eligible.length === 0) return finalEvent;
+  return eligible[Math.floor(Math.random() * eligible.length)];
 }
 
 // Mirrors the roll+bonus vs needed math inside startDice()'s completion timeout.
@@ -69,13 +42,21 @@ export function resolveCheck(check, stats, difficulty) {
 
 // Mirrors applyRes(res): folds a result object into day/hp/died/ending/gameOver,
 // plus any flags the outcome sets (setFlags), merged into the run's flag list.
-export function applyResult(runState, res, difficulty) {
+//
+// `secretEndings` (data/endings.js: SECRET_ENDINGS) is checked only when
+// this result is an actual win (res.win or res.winIfAlive-and-alive) — i.e.
+// only at the final event. A secret ending, if the run's flags qualify for
+// one, overrides the `ending` the chosen final-event option would otherwise
+// have produced. Dying never triggers a secret ending — a death keeps its
+// own ending untouched.
+export function applyResult(runState, res, difficulty, secretEndings = []) {
   const m = diff(difficulty);
   const day = runState.day + (res.days || 0);
   let dmg = res.health || 0;
   if (dmg < 0) dmg = Math.round(dmg * m.dmg);
   const hp = Math.max(0, Math.min(runState.hpMax, runState.hp + dmg));
   const died = hp <= 0;
+  const flags = addFlags(runState.flags, res.setFlags);
   let ending = runState.ending;
   let gameOver = false;
   if (res.win) {
@@ -86,7 +67,10 @@ export function applyResult(runState, res, difficulty) {
     gameOver = true;
   }
   if (died) gameOver = true;
-  const flags = addFlags(runState.flags, res.setFlags);
+  if (!died && (res.win || res.winIfAlive)) {
+    const secret = resolveSecretEnding(secretEndings, { died, flags });
+    if (secret) ending = secret.label;
+  }
   return { day, hp, died, ending, gameOver, logEntry: res.msg, flags };
 }
 

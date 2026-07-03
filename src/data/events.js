@@ -217,8 +217,8 @@ export const EVENTS = [
       { text:"Pay what they're asking",
         result:{days:1,health:-1,msg:'You hand over a share of your supplies. They lift the chain without a word.',tag:'PAID TOLL',setFlags:['paid_toll']} },
       { text:'Push through the chain point', check:{stat:'combat',needed:8,label:'COMBAT'},
-        success:{days:1,msg:"You put one down before the other two decide the toll isn't worth dying for.",setFlags:['crossed_bridge_hard']},
-        fail:{days:2,health:-3,msg:"Three against one is worse math than you thought. You pay double to walk away.",setFlags:['crossed_bridge_hard']} },
+        success:{days:1,msg:"You put one down before the other two decide the toll isn't worth dying for.",setFlags:['robbed_toll']},
+        fail:{days:2,health:-3,msg:"Three against one is worse math than you thought. You pay double to walk away.",setFlags:['robbed_toll']} },
       { text:'Turn back and find another crossing',
         result:{days:3,msg:"You give up the bridge and the days it would've saved you.",tag:'REROUTED'} },
     ]},
@@ -247,7 +247,7 @@ export const EVENTS = [
     body:['Another scavenger reaches the same collapsed pharmacy at the same moment you do.','Neither of you got here first. Both of you need what\'s inside.'],
     choices:[
       { text:'Split the haul evenly',
-        result:{days:1,msg:'You divide what\'s left down the middle and go your separate ways. Nobody draws a weapon.',tag:'SPLIT EVEN',setFlags:['fair_with_scavenger']} },
+        result:{days:1,msg:'You divide what\'s left down the middle and go your separate ways. Nobody draws a weapon.',tag:'SPLIT EVEN',setFlags:['spared_scavenger']} },
       { text:'Push them off the site', check:{stat:'combat',needed:7,label:'COMBAT'},
         success:{days:1,health:-1,msg:'You make it clear this find is yours. They leave cursing, but they leave.',setFlags:['robbed_scavenger']},
         fail:{days:2,health:-3,msg:"They're not backing down. You leave with less than you'd have gotten by sharing."} },
@@ -306,7 +306,7 @@ export const EVENTS = [
   // a run's initial sequence (flags start empty) and only enter play via
   // unlockFlagEvents() once the triggering choice actually happens. Each
   // pair is mutually exclusive via excludeFlags on the other branch's flag.
-  { title:'The Bridge Toll, Repaid', requiresFlags:['paid_toll'], excludeFlags:['crossed_bridge_hard'],
+  { title:'The Bridge Toll, Repaid', requiresFlags:['paid_toll'], excludeFlags:['robbed_toll'],
     body:['The three from the toll bridge are camped just off the road — the ones you paid instead of fighting.','They wave you over before you can decide whether to avoid them.'],
     choices:[
       { text:'Sit by their fire a while',
@@ -317,7 +317,7 @@ export const EVENTS = [
       { text:'Take the offer and keep moving',
         result:{days:1,health:1,msg:'You take what they offer — dry socks, a half-full canteen — and nod your thanks.',tag:'KEPT MOVING'} },
     ]},
-  { title:'The Bridge Toll, Remembered', requiresFlags:['crossed_bridge_hard'], excludeFlags:['paid_toll'],
+  { title:'The Bridge Toll, Remembered', requiresFlags:['robbed_toll'], excludeFlags:['paid_toll'],
     body:['The survivors from the toll bridge block the road again — the ones you fought your way past.',"They've had time to plan for a rematch."],
     choices:[
       { text:"Point to what you did at the nursery — you're not what they think", requiresFlags:['helped_nursery_kids'], flagLabel:'a reputation for mercy',
@@ -328,7 +328,7 @@ export const EVENTS = [
       { text:'Try to talk your way out',
         result:{days:1,health:-1,msg:"They're not interested in talking this time. You back away slowly, giving ground.",tag:'BACKED OFF'} },
     ]},
-  { title:"The Scavenger's Debt", requiresFlags:['fair_with_scavenger'], excludeFlags:['robbed_scavenger'],
+  { title:"The Scavenger's Debt", requiresFlags:['spared_scavenger'], excludeFlags:['robbed_scavenger'],
     body:['The scavenger from the pharmacy split waves you down from across a parking lot.',"They remember you didn't have to share. You didn't have to, and you did."],
     choices:[
       { text:'Hear them out',
@@ -339,7 +339,7 @@ export const EVENTS = [
       { text:'Thank them and move on',
         result:{days:1,msg:"You don't need the favor spelled out. A nod is enough between people who split things evenly.",tag:'MOVED ON'} },
     ]},
-  { title:"The Scavenger's Grudge", requiresFlags:['robbed_scavenger'], excludeFlags:['fair_with_scavenger'],
+  { title:"The Scavenger's Grudge", requiresFlags:['robbed_scavenger'], excludeFlags:['spared_scavenger'],
     body:['The scavenger you pushed off the pharmacy find is back — and not alone this time.',"They've clearly been telling people about you."],
     choices:[
       { text:"Point to what you did at the nursery — you're not a monster", requiresFlags:['helped_nursery_kids'], flagLabel:'a reputation for mercy',
