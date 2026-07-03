@@ -50,3 +50,15 @@ export const noiseHeaderBg =
 
 export const coffeeRingBg =
   "radial-gradient(circle at 92% 4%, transparent 0 28px, rgba(101,67,26,.30) 28px 30px, transparent 30px 36px, rgba(101,67,26,.15) 36px 38px, transparent 38px)";
+
+// Reading screens (event/results) use a narrower centered column instead of
+// the full wide paper panel, so line lengths stay comfortable and the frame
+// hugs the (intentionally terse) prose like a journal page rather than
+// stranding it in a wide field.
+export const readingColumnWidth = "620px";
+
+// Faint ruled-notebook-paper lines, same ink tint as the coffee ring, so
+// empty vertical space in a short entry reads as "blank journal page
+// waiting to be filled" rather than a layout bug.
+export const journalRuleBg = "linear-gradient(rgba(101,67,26,.06) 1px, transparent 1px)";
+export const journalRuleSize = "100% 28px";

@@ -6,7 +6,7 @@ import { diff } from "./engine/difficulty.js";
 import { shuffleFour, applyCardPick, contributorsForStat } from "./engine/draft.js";
 import { rollD10, resolveCheck, applyResult, sampleRunEvents } from "./engine/events.js";
 import { tier, unlockAchievements } from "./engine/scoring.js";
-import { buildShareText, copyShareText, SHARE_LABEL_DEFAULT, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
+import { shareRun, SHARE_LABEL_DEFAULT, SHARE_LABEL_SHARED, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
 import { trackEvent } from "./engine/analytics.js";
 
 import Ribbon from "./components/Ribbon.jsx";
@@ -324,10 +324,13 @@ export default function App() {
     setState((prev) => ({ ...prev, screen: "results", played, best, ach, newAch, showDice: false, dice: null, reacting: false, reaction: null }));
   };
 
-  const onShare = () => {
-    const text = buildShareText({ day: state.day, died: state.died, ending: state.ending });
-    copyShareText(text);
-    setState((prev) => ({ ...prev, shareLabel: SHARE_LABEL_COPIED }));
+  const onShare = async () => {
+    const result = await shareRun({ day: state.day, died: state.died, ending: state.ending, loadout: state.loadout });
+    // A cancelled share sheet isn't a failure — the user backed out on
+    // purpose, so there's nothing to confirm and no clipboard fallback to run.
+    if (result.method === "cancelled") return;
+    const label = result.method === "share" ? SHARE_LABEL_SHARED : SHARE_LABEL_COPIED;
+    setState((prev) => ({ ...prev, shareLabel: label }));
     setTimeout(() => setState((prev) => ({ ...prev, shareLabel: SHARE_LABEL_DEFAULT })), SHARE_LABEL_RESET_MS);
   };
 
@@ -398,38 +401,90 @@ export default function App() {
                 />
               )}
               {state.screen === "event" && (
-                <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-                  {/* Persistent header: stays visible above the dice overlay (which only
-                      covers the body below) so the condition reaction is never hidden
-                      behind a modal — the hit has to be seen landing, not just implied. */}
-                  <div style={{ padding: "16px 22px 0", borderBottom: `1px solid ${t.borderSubtle}`, paddingBottom: "10px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ fontSize: "12px", letterSpacing: "2px", color: t.muted }}>
-                        DAY <span style={{ color: t.ink, fontSize: "16px" }}>{state.day}</span>
+                // Ruled-paper texture spans the full wide panel — a short entry
+                // still reads as "journal page with room to breathe," not dead
+                // space — while the reading column itself stays narrow and
+                // centered so line lengths stay comfortable regardless of frame
+                // width. The margin rule is the same faint red as classic ruled
+                // paper's left margin line.
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    minHeight: 0,
+                    backgroundImage: t.journalRuleBg,
+                    backgroundSize: t.journalRuleSize,
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: t.readingColumnWidth,
+                      width: "100%",
+                      margin: "0 auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                      minHeight: 0,
+                      borderLeft: "1px solid rgba(198,40,40,.14)",
+                    }}
+                  >
+                    {/* Persistent header: stays visible above the dice overlay (which only
+                        covers the body below) so the condition reaction is never hidden
+                        behind a modal — the hit has to be seen landing, not just implied. */}
+                    <div style={{ padding: "16px 22px 10px", borderBottom: `1px solid ${t.borderSubtle}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ fontSize: "12px", letterSpacing: "2px", color: t.muted }}>
+                          DAY <span style={{ color: t.ink, fontSize: "16px" }}>{state.day}</span>
+                        </div>
+                        <ConditionBar hp={state.hp} hpMax={state.hpMax} />
                       </div>
-                      <ConditionBar hp={state.hp} hpMax={state.hpMax} />
+                      <ProgressTrail current={state.eventIndex} total={state.runEvents.length} />
                     </div>
-                    <ProgressTrail current={state.eventIndex} total={state.runEvents.length} />
-                  </div>
-                  <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                    <Events event={currentEvent} traits={state.traits} difficulty={DIFFICULTY} reacting={state.reacting} reaction={state.reaction} onChoose={chooseOption} />
-                    <DiceOverlay show={state.showDice} dice={state.dice} onContinue={onContinue} />
+                    <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                      <Events event={currentEvent} traits={state.traits} difficulty={DIFFICULTY} reacting={state.reacting} reaction={state.reaction} onChoose={chooseOption} />
+                      <DiceOverlay show={state.showDice} dice={state.dice} onContinue={onContinue} />
+                    </div>
                   </div>
                 </div>
               )}
               {state.screen === "results" && (
-                <Results
-                  died={state.died}
-                  day={state.day}
-                  tier={currentTier}
-                  ending={state.ending}
-                  newAch={state.newAch}
-                  loadout={state.loadout}
-                  log={state.log}
-                  shareLabel={state.shareLabel}
-                  onShare={onShare}
-                  onAgain={onAgain}
-                />
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    minHeight: 0,
+                    backgroundImage: t.journalRuleBg,
+                    backgroundSize: t.journalRuleSize,
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: t.readingColumnWidth,
+                      width: "100%",
+                      margin: "0 auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                      minHeight: 0,
+                      borderLeft: "1px solid rgba(198,40,40,.14)",
+                    }}
+                  >
+                    <Results
+                      died={state.died}
+                      day={state.day}
+                      tier={currentTier}
+                      ending={state.ending}
+                      newAch={state.newAch}
+                      loadout={state.loadout}
+                      log={state.log}
+                      shareLabel={state.shareLabel}
+                      onShare={onShare}
+                      onAgain={onAgain}
+                    />
+                  </div>
+                </div>
               )}
             </>
           )}

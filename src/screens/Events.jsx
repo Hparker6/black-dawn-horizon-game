@@ -38,13 +38,23 @@ export default function Events({ event, traits, difficulty, reacting, reaction, 
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px 22px 22px" }}>
-      <div style={{ flex: 1, overflow: "auto", animation: "bdhFadeUp .45s ease both" }}>
+      {/* Natural height, top-anchored — the terse body text shouldn't stretch
+          to fill the page. The gap it leaves is claimed deliberately below. */}
+      <div style={{ overflow: "auto", animation: "bdhFadeUp .45s ease both" }}>
         <div style={{ fontFamily: t.fontDisplay, fontSize: "28px", color: t.ink, lineHeight: 1, letterSpacing: "1px", marginBottom: "14px" }}>{event.title}</div>
         {(event.body || []).map((line, i) => (
           <p key={i} style={{ fontSize: "15px", lineHeight: 1.62, color: "#2a2620", margin: "0 0 12px", textWrap: "pretty" }}>
             {line}
           </p>
         ))}
+      </div>
+      {/* Claims the remaining space between the entry and the choices/reaction
+          below, and — while a choice hasn't resolved yet — centers a small
+          ornament in it, so the middle of the page reads as "designed pause,"
+          not leftover void. Always present (even while reacting) so the
+          reaction card still anchors to the bottom instead of floating. */}
+      <div style={{ flex: 1, minHeight: "36px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {!reacting && <span style={{ color: t.borderSubtle, fontSize: "20px", letterSpacing: "10px", opacity: 0.7 }}>❖</span>}
       </div>
       {reacting ? (
         <EventReaction reaction={reaction} />
