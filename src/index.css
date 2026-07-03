@@ -121,6 +121,19 @@ body {
   }
 }
 
+/* Draft shuffle: a slot pops slightly and its glow settles the instant it
+   locks onto its final card, mid-roll — the "landing" beat of the shuffle. */
+@keyframes bdhSettle {
+  0% {
+    transform: scale(1.07);
+    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.55);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px -3px rgba(0, 0, 0, 0.25);
+  }
+}
+
 [data-noscroll]::-webkit-scrollbar {
   display: none;
 }

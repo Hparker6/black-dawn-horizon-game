@@ -27,7 +27,11 @@ const DIFFICULTY = "Balanced"; // Merciful | Balanced | Brutal
 const DRAFT_LAYOUT = "Grid Compare"; // Grid Compare | Fanned Hand | Pack Reveal
 const REDUCE_MOTION = false;
 
-const ROLL_DELAY_MS = REDUCE_MOTION ? 260 : 650;
+// Draft "rolling" duration: long enough for the shuffle animation in
+// Draft.jsx (cycling faces, staggered per-slot settle) to play out before
+// the phase flips to "revealed". Shortened under reduceMotion to a quick
+// settle rather than the full shuffle.
+const ROLL_DELAY_MS = REDUCE_MOTION ? 300 : 1350;
 const PICK_DELAY_MS = 620;
 const DICE_TICK_MS = REDUCE_MOTION ? 260 : 65;
 const DICE_TOTAL_MS = REDUCE_MOTION ? 320 : 700;
@@ -129,19 +133,25 @@ export default function App() {
     setState((prev) => ({ ...prev, tab: "survival", screen: "title", showDice: false, dice: null, reacting: false, reaction: null }));
   };
 
+  // The actual 4 cards are decided immediately (not at the end of the delay)
+  // so Draft.jsx's shuffle animation can cycle toward the real outcome and
+  // have each slot settle on it before "revealed" flips — no last-instant
+  // swap once the phase transitions.
   const onRoll = () => {
     if (state.draftPhase !== "idle") return;
-    setState((prev) => ({ ...prev, draftPhase: "rolling" }));
+    const draftCards = shuffleFour(DRAFT[state.draftRound].cards);
+    setState((prev) => ({ ...prev, draftPhase: "rolling", draftCards }));
     setTimeout(() => {
-      setState((prev) => ({ ...prev, draftPhase: "revealed", draftCards: shuffleFour(DRAFT[prev.draftRound].cards) }));
+      setState((prev) => ({ ...prev, draftPhase: "revealed" }));
     }, ROLL_DELAY_MS);
   };
 
   const onReroll = () => {
     if (state.draftPhase !== "revealed" || state.respins <= 0) return;
-    setState((prev) => ({ ...prev, draftPhase: "rolling", respins: prev.respins - 1 }));
+    const draftCards = shuffleFour(DRAFT[state.draftRound].cards);
+    setState((prev) => ({ ...prev, draftPhase: "rolling", respins: prev.respins - 1, draftCards }));
     setTimeout(() => {
-      setState((prev) => ({ ...prev, draftPhase: "revealed", draftCards: shuffleFour(DRAFT[prev.draftRound].cards) }));
+      setState((prev) => ({ ...prev, draftPhase: "revealed" }));
     }, ROLL_DELAY_MS);
   };
 
@@ -381,6 +391,7 @@ export default function App() {
                   cards={state.draftCards}
                   pickedId={state.pickedId}
                   layout={DRAFT_LAYOUT}
+                  reduceMotion={REDUCE_MOTION}
                   onRoll={onRoll}
                   onReroll={onReroll}
                   onPickCard={onPickCard}
