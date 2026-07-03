@@ -33,8 +33,8 @@ function badgeStyle(kind) {
 // behind a modal). This screen owns only the event card itself: title, body,
 // and either the choice list or — once a plain/trait choice has resolved —
 // the inline EventReaction in its place.
-export default function Events({ event, traits, difficulty, reacting, reaction, onChoose }) {
-  const classified = classifyChoices(event, traits, difficulty);
+export default function Events({ event, traits, flags, difficulty, reacting, reaction, onChoose }) {
+  const classified = classifyChoices(event, traits, flags, difficulty);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px 22px 22px" }}>
