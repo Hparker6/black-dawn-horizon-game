@@ -7,6 +7,7 @@ import { shuffleFour, applyCardPick, contributorsForStat } from "./engine/draft.
 import { rollD10, resolveCheck, applyResult, sampleRunEvents } from "./engine/events.js";
 import { tier, unlockAchievements } from "./engine/scoring.js";
 import { buildShareText, copyShareText, SHARE_LABEL_DEFAULT, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
+import { trackEvent } from "./engine/analytics.js";
 
 import Ribbon from "./components/Ribbon.jsx";
 import DiceOverlay from "./components/DiceOverlay.jsx";
@@ -102,6 +103,7 @@ export default function App() {
 
   // ---------- draft flow ----------
   const onPlay = () => {
+    trackEvent("run_started", { difficulty: DIFFICULTY });
     const m = diff(DIFFICULTY);
     setState((prev) => ({
       ...prev,
@@ -145,6 +147,13 @@ export default function App() {
 
   const onPickCard = (card) => {
     if (state.pickedId) return;
+    trackEvent("draft_card_selected", {
+      round: state.draftRound + 1,
+      category: DRAFT[state.draftRound].cat,
+      card_id: card.id,
+      card_name: card.name,
+      trait: card.trait || "none",
+    });
     setState((prev) => ({ ...prev, pickedId: card.id }));
     setTimeout(() => {
       setState((prev) => {
@@ -190,28 +199,33 @@ export default function App() {
   // weight.
   const chooseOption = (choice, locked) => {
     if (locked) return;
+    const eventTitle = (state.runEvents[state.eventIndex] || {}).title;
     if (choice.check) {
-      startDice(choice);
+      startDice(choice, eventTitle);
       return;
     }
-    setState((prev) => {
-      const applied = applyResult(prev, choice.result, DIFFICULTY);
-      return {
-        ...prev,
-        day: applied.day,
-        hp: applied.hp,
-        died: applied.died,
-        ending: applied.ending,
-        gameOver: applied.gameOver,
-        log: [...prev.log, applied.logEntry],
-        reacting: true,
-        reaction: choice.result,
-      };
+    const applied = applyResult(state, choice.result, DIFFICULTY);
+    trackEvent("choice_selected", {
+      event_title: eventTitle,
+      choice_text: choice.text,
+      choice_kind: choice.requiredTrait ? "trait" : "plain",
+      resulted_in_death: applied.died,
     });
+    setState((prev) => ({
+      ...prev,
+      day: applied.day,
+      hp: applied.hp,
+      died: applied.died,
+      ending: applied.ending,
+      gameOver: applied.gameOver,
+      log: [...prev.log, applied.logEntry],
+      reacting: true,
+      reaction: choice.result,
+    }));
     setTimeout(finishOrAdvance, REACTION_MS);
   };
 
-  const startDice = (choice) => {
+  const startDice = (choice, eventTitle) => {
     const contributors = contributorsForStat(state.loadout, choice.check.stat);
     setState((prev) => ({ ...prev, showDice: true, dice: { phase: "rolling", roll: 1, label: choice.check.label, contributors } }));
     diceTimerRef.current = setInterval(() => {
@@ -219,23 +233,33 @@ export default function App() {
     }, DICE_TICK_MS);
     setTimeout(() => {
       clearInterval(diceTimerRef.current);
-      setState((prev) => {
-        const { roll, bonus, needed, total, success } = resolveCheck(choice.check, prev.stats, DIFFICULTY);
-        const res = success ? choice.success : choice.fail;
-        const applied = applyResult(prev, res, DIFFICULTY);
-        return {
-          ...prev,
-          day: applied.day,
-          hp: applied.hp,
-          died: applied.died,
-          ending: applied.ending,
-          gameOver: applied.gameOver,
-          log: [...prev.log, applied.logEntry],
-          dice: { phase: "done", roll, bonus, total, needed, success, label: choice.check.label, contributors, msg: res.msg, tag: res.tag },
-          runClutch: prev.runClutch || (success && needed >= 10),
-          runFailed: prev.runFailed || !success,
-        };
+      // Resolved outside the setState updater (reading stateRef, not `prev`)
+      // so trackEvent — a side effect — never risks double-firing under
+      // StrictMode's dev-only double-invocation of updater functions.
+      const cur = stateRef.current;
+      const { roll, bonus, needed, total, success } = resolveCheck(choice.check, cur.stats, DIFFICULTY);
+      const res = success ? choice.success : choice.fail;
+      const applied = applyResult(cur, res, DIFFICULTY);
+      trackEvent("choice_selected", {
+        event_title: eventTitle,
+        choice_text: choice.text,
+        choice_kind: "check",
+        check_stat: choice.check.stat,
+        check_success: success,
+        resulted_in_death: applied.died,
       });
+      setState((prev) => ({
+        ...prev,
+        day: applied.day,
+        hp: applied.hp,
+        died: applied.died,
+        ending: applied.ending,
+        gameOver: applied.gameOver,
+        log: [...prev.log, applied.logEntry],
+        dice: { phase: "done", roll, bonus, total, needed, success, label: choice.check.label, contributors, msg: res.msg, tag: res.tag },
+        runClutch: prev.runClutch || (success && needed >= 10),
+        runFailed: prev.runFailed || !success,
+      }));
     }, DICE_TOTAL_MS);
   };
 
@@ -268,6 +292,19 @@ export default function App() {
       ending: snapshot.ending,
       runClutch: snapshot.runClutch,
       runFailed: snapshot.runFailed,
+    });
+    // days_survived/ending_reached/highest_day live as parameters on this one
+    // event rather than separate hits — GA4's Explore reports break down and
+    // average event parameters directly, so "average days survived" or "most
+    // common ending" is just a report on run_finished, not a new event type.
+    trackEvent("run_finished", {
+      days_survived: snapshot.day,
+      ending: snapshot.ending || (snapshot.died ? "Died" : "Reached the Coast"),
+      tier: tier({ died: snapshot.died, day: snapshot.day }),
+      died: snapshot.died,
+      difficulty: DIFFICULTY,
+      is_new_best: snapshot.day > snapshot.best,
+      new_achievements: newAch,
     });
     try {
       localStorage.setItem("bdh_best", String(best));
