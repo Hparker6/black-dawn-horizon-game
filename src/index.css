@@ -121,16 +121,141 @@ body {
   }
 }
 
-/* Draft shuffle: a slot pops slightly and its glow settles the instant it
-   locks onto its final card, mid-roll — the "landing" beat of the shuffle. */
-@keyframes bdhSettle {
+/* Draft shuffle: a slot pops slightly the instant it locks onto its final
+   card, mid-roll — the "landing" beat of the shuffle. Scaled by rarity so a
+   good pull visibly feels better to land, without the item being stronger:
+   common barely pops, jackpot pops hard with a bright flash. */
+@keyframes bdhSettleCommon {
   0% {
-    transform: scale(1.07);
-    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.55);
+    transform: scale(1.04);
+    box-shadow: 0 0 0 2px rgba(138, 127, 102, 0.4);
   }
   100% {
     transform: scale(1);
     box-shadow: 0 2px 6px -3px rgba(0, 0, 0, 0.25);
+  }
+}
+@keyframes bdhSettleRare {
+  0% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px -3px rgba(0, 0, 0, 0.25);
+  }
+}
+@keyframes bdhSettleUltra {
+  0% {
+    transform: scale(1.13);
+    box-shadow: 0 0 0 4px rgba(156, 111, 216, 0.75);
+  }
+  60% {
+    transform: scale(0.99);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px -3px rgba(0, 0, 0, 0.25);
+  }
+}
+@keyframes bdhSettleJackpot {
+  0% {
+    transform: scale(1.24);
+    box-shadow: 0 0 26px 8px rgba(212, 168, 67, 0.95);
+  }
+  55% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px -3px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* Idle glow: keeps a settled/revealed card from ever looking static.
+   Intensity scales with rarity — common is nearly imperceptible, jackpot
+   cycles through color like a jewel catching light. */
+@keyframes rarityGlowCommon {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px -3px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    box-shadow: 0 2px 8px -2px rgba(138, 127, 102, 0.3);
+  }
+}
+@keyframes rarityGlowRare {
+  0%,
+  100% {
+    box-shadow: 0 0 5px 0 rgba(212, 168, 67, 0.35), 0 2px 6px -3px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 13px 2px rgba(212, 168, 67, 0.65), 0 2px 6px -3px rgba(0, 0, 0, 0.3);
+  }
+}
+@keyframes rarityGlowUltra {
+  0%,
+  100% {
+    box-shadow: 0 0 7px 1px rgba(156, 111, 216, 0.45), 0 2px 6px -3px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 17px 4px rgba(156, 111, 216, 0.8), 0 2px 6px -3px rgba(0, 0, 0, 0.3);
+  }
+}
+@keyframes rarityGlowJackpot {
+  0% {
+    box-shadow: 0 0 15px 3px rgba(198, 40, 40, 0.7);
+  }
+  20% {
+    box-shadow: 0 0 15px 3px rgba(212, 168, 67, 0.75);
+  }
+  40% {
+    box-shadow: 0 0 15px 3px rgba(45, 90, 61, 0.7);
+  }
+  60% {
+    box-shadow: 0 0 15px 3px rgba(80, 120, 220, 0.75);
+  }
+  80% {
+    box-shadow: 0 0 15px 3px rgba(156, 111, 216, 0.75);
+  }
+  100% {
+    box-shadow: 0 0 15px 3px rgba(198, 40, 40, 0.7);
+  }
+}
+
+/* Diagonal light band sweeping across ultra/jackpot cards — layered as a
+   separate overlay span so it never touches text/content colors. */
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-130%) skewX(-15deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.55;
+  }
+  65% {
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(230%) skewX(-15deg);
+    opacity: 0;
+  }
+}
+
+/* One confetti piece flung outward from a jackpot card the instant it
+   settles. Direction/distance/rotation come in per-piece via custom
+   properties set inline (see components/JackpotConfetti.jsx). */
+@keyframes confettiBurst {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx, 40px), var(--dy, 60px)) rotate(var(--rot, 180deg));
+    opacity: 0;
   }
 }
 

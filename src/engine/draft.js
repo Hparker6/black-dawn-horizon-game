@@ -30,8 +30,10 @@ export function applyCardPick({ stats, hpMax, hp, traits, loadout }, card) {
   }
   const nextTraits = card.trait ? [...traits, card.trait] : traits;
   // stats carried alongside name/trait so a later dice check can attribute
-  // its bonus back to the specific drafted item(s) that produced it.
-  const nextLoadout = [...loadout, { name: card.name, trait: card.trait, stats: card.stats }];
+  // its bonus back to the specific drafted item(s) that produced it. rarity
+  // carried so the persistent loadout display (LoadoutStrip) can color-code
+  // each item the same way the draft card did.
+  const nextLoadout = [...loadout, { name: card.name, trait: card.trait, stats: card.stats, rarity: card.rarity }];
   return { stats: nextStats, hpMax: nextHpMax, hp: nextHp, traits: nextTraits, loadout: nextLoadout };
 }
 

@@ -4,7 +4,7 @@ import { DRAFT } from "./data/items.js";
 import { EVENTS } from "./data/events.js";
 import { diff } from "./engine/difficulty.js";
 import { shuffleFour, applyCardPick, contributorsForStat } from "./engine/draft.js";
-import { rollD10, resolveCheck, applyResult, sampleRunEvents } from "./engine/events.js";
+import { rollD10, resolveCheck, applyResult, sampleRunEvents, unlockFlagEvents } from "./engine/events.js";
 import { tier, unlockAchievements } from "./engine/scoring.js";
 import { shareRun, SHARE_LABEL_DEFAULT, SHARE_LABEL_SHARED, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
 import { trackEvent } from "./engine/analytics.js";
@@ -12,6 +12,7 @@ import { trackEvent } from "./engine/analytics.js";
 import Ribbon from "./components/Ribbon.jsx";
 import DiceOverlay from "./components/DiceOverlay.jsx";
 import ConditionBar from "./components/ConditionBar.jsx";
+import LoadoutStrip from "./components/LoadoutStrip.jsx";
 import ProgressTrail from "./components/ProgressTrail.jsx";
 import Title from "./screens/Title.jsx";
 import Draft from "./screens/Draft.jsx";
@@ -67,6 +68,10 @@ function initialState() {
     day: 0,
     eventIndex: 0,
     runEvents: [],
+    // Consequences set by choices that persist for the rest of the run —
+    // see engine/flags.js. Gates later choices/events, and can unlock
+    // callback events mid-run (see unlockFlagEvents in engine/events.js).
+    flags: [],
     log: [],
     ending: null,
     died: false,
@@ -121,6 +126,7 @@ export default function App() {
       stats: { combat: 0, survival: 0, wits: 0 },
       traits: [],
       loadout: [],
+      flags: [],
       hpMax: 8 + m.hp,
       hp: 8 + m.hp,
     }));
@@ -171,7 +177,7 @@ export default function App() {
         if (prev.draftRound < DRAFT.length - 1) {
           return { ...prev, draftRound: prev.draftRound + 1, draftPhase: "idle", draftCards: [], pickedId: null, ...updated };
         }
-        const runEvents = sampleRunEvents(EVENTS, MIN_RUN_EVENTS + Math.floor(Math.random() * (MAX_RUN_EVENTS - MIN_RUN_EVENTS + 1)));
+        const runEvents = sampleRunEvents(EVENTS, MIN_RUN_EVENTS + Math.floor(Math.random() * (MAX_RUN_EVENTS - MIN_RUN_EVENTS + 1)), prev.flags);
         return {
           ...prev,
           screen: "event",
@@ -183,6 +189,7 @@ export default function App() {
           ...updated,
           day: 0,
           log: [],
+          flags: [],
           ending: null,
           died: false,
           gameOver: false,
@@ -220,6 +227,7 @@ export default function App() {
       choice_text: choice.text,
       choice_kind: choice.requiredTrait ? "trait" : "plain",
       resulted_in_death: applied.died,
+      set_flags: choice.result.setFlags || [],
     });
     setState((prev) => ({
       ...prev,
@@ -228,6 +236,10 @@ export default function App() {
       died: applied.died,
       ending: applied.ending,
       gameOver: applied.gameOver,
+      flags: applied.flags,
+      // A flag this choice just set may make a callback event eligible —
+      // splice it into the run's remaining sequence if so.
+      runEvents: unlockFlagEvents(prev.runEvents, prev.eventIndex, applied.flags, EVENTS),
       log: [...prev.log, applied.logEntry],
       reacting: true,
       reaction: choice.result,
@@ -257,6 +269,7 @@ export default function App() {
         check_stat: choice.check.stat,
         check_success: success,
         resulted_in_death: applied.died,
+        set_flags: res.setFlags || [],
       });
       setState((prev) => ({
         ...prev,
@@ -265,6 +278,8 @@ export default function App() {
         died: applied.died,
         ending: applied.ending,
         gameOver: applied.gameOver,
+        flags: applied.flags,
+        runEvents: unlockFlagEvents(prev.runEvents, prev.eventIndex, applied.flags, EVENTS),
         log: [...prev.log, applied.logEntry],
         dice: { phase: "done", roll, bonus, total, needed, success, label: choice.check.label, contributors, msg: res.msg, tag: res.tag },
         runClutch: prev.runClutch || (success && needed >= 10),
@@ -442,10 +457,14 @@ export default function App() {
                       <ProgressTrail current={state.eventIndex} total={state.runEvents.length} />
                     </div>
                     <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                      <Events event={currentEvent} traits={state.traits} difficulty={DIFFICULTY} reacting={state.reacting} reaction={state.reaction} onChoose={chooseOption} />
+                      <Events event={currentEvent} traits={state.traits} flags={state.flags} difficulty={DIFFICULTY} reacting={state.reacting} reaction={state.reaction} onChoose={chooseOption} />
                       <DiceOverlay show={state.showDice} dice={state.dice} onContinue={onContinue} />
                     </div>
                   </div>
+                  {/* Outside the reading column on purpose — full panel width,
+                      docked to the bottom, so it never narrows the story text
+                      or competes with it. Collapsed by default either way. */}
+                  <LoadoutStrip loadout={state.loadout} />
                 </div>
               )}
               {state.screen === "results" && (

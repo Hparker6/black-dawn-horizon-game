@@ -62,3 +62,23 @@ export const readingColumnWidth = "620px";
 // waiting to be filled" rather than a layout bug.
 export const journalRuleBg = "linear-gradient(rgba(101,67,26,.06) 1px, transparent 1px)";
 export const journalRuleSize = "100% 28px";
+
+// Draft item rarity. Deliberately NOT a power ladder — see the balance note
+// in data/items.js. Colors/labels only; the CSS glow/shimmer/settle
+// intensity per tier lives in index.css (rarityGlow*/bdhSettle* keyframes).
+export const ultraBorder = "#9c6fd8";
+export const ultraBg = "#f2ecfa";
+export const ultraText = "#6a3fb0";
+export const jackpotBorder = "#d4a843";
+export const jackpotBg = "#fbf3de";
+export const jackpotText = "#8a6a12";
+
+export const RARITY_LABEL = { common: "COMMON", rare: "RARE", ultra: "ULTRA RARE", jackpot: "JACKPOT" };
+export const RARITY_ORDER = ["common", "rare", "ultra", "jackpot"];
+
+export function rarityColors(rarity) {
+  if (rarity === "jackpot") return { border: jackpotBorder, bg: jackpotBg, text: jackpotText };
+  if (rarity === "ultra") return { border: ultraBorder, bg: ultraBg, text: ultraText };
+  if (rarity === "rare") return { border: rareBorder, bg: rareBg, text: highlightText };
+  return { border: commonBorder, bg: commonBg, text: rankMuted };
+}
