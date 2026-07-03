@@ -1,0 +1,42 @@
+export const DRAFT = [
+  { cat:'TOOLS', constraint:'One tool crosses the threshold with you. Roll for what fate hands over.', cards:[
+    {id:'crowbar', name:'Steel Crowbar', desc:'Opens doors and ends arguments.', stats:{combat:2}, trait:'PryOpen', tlabel:'Pry Open'},
+    {id:'axe', name:'Fire Axe', desc:'Slow to swing, but nothing stands after.', stats:{combat:3,survival:1}, trait:null},
+    {id:'multi', name:'Multi-Tool', desc:'Fourteen tools folded in your palm.', stats:{wits:2}, trait:null},
+    {id:'bolt', name:'Bolt Cutters', desc:'Chain, fence, padlock — all the same.', stats:{wits:1,combat:1}, trait:'PryOpen', tlabel:'Cut Locks'},
+    {id:'sledge', name:'Sledgehammer', desc:'Nothing stays locked for long.', stats:{combat:4}, trait:null},
+    {id:'screws', name:'Screwdriver Set', desc:'Slow, quiet, surprisingly versatile.', stats:{wits:1}, trait:null},
+  ]},
+  { cat:'MEDICAL', constraint:"Your body is the only shelter you can't replace.", cards:[
+    {id:'firstaid', name:'First-Aid Kit', desc:'Gauze, sutures, iodine. Buys a morning.', stats:{health:3}, trait:'Heal', tlabel:'Treat Wounds'},
+    {id:'antibio', name:'Antibiotics', desc:"A half bottle. Fever's worst enemy.", stats:{health:1}, trait:'Cure', tlabel:'Cure Infection'},
+    {id:'adren', name:'Adrenaline Shot', desc:'One jolt. Turns fear into fuel.', stats:{combat:2}, trait:null},
+    {id:'pain', name:'Painkillers', desc:'Dulls the edges so you keep moving.', stats:{survival:2}, trait:null},
+    {id:'vitamin', name:'Vitamins', desc:'Not much, but it adds up.', stats:{survival:1,wits:1}, trait:null},
+    {id:'morphine', name:'Morphine Vial', desc:'Numbs everything. Handle with care.', stats:{health:2}, trait:null},
+  ]},
+  { cat:'SUSTENANCE', constraint:'Hunger is a slow roll you never stop making.', cards:[
+    {id:'cans', name:'Canned Rations', desc:'Twelve dented tins, no labels.', stats:{survival:3}, trait:null},
+    {id:'filter', name:'Water Filter', desc:'Makes staying alive routine.', stats:{survival:1}, trait:'Purify', tlabel:'Purify Water'},
+    {id:'bars', name:'Energy Bars', desc:'Chalky, ancient, effective.', stats:{survival:1,wits:1}, trait:null},
+    {id:'fish', name:'Fishing Kit', desc:'The lake keeps giving.', stats:{survival:2}, trait:null},
+    {id:'rice', name:'Rice Sacks', desc:'Heavy, dull, and full of days.', stats:{survival:2}, trait:null},
+    {id:'iodine', name:'Iodine Tablets', desc:'Turns anything wet into something safe.', stats:{survival:1}, trait:'Purify', tlabel:'Purify Water'},
+  ]},
+  { cat:'DEFENSE', constraint:'Some doors you only get to open once.', cards:[
+    {id:'pistol', name:'Handgun · 6 Rounds', desc:'Loud, final, out of ammo too soon.', stats:{combat:4}, trait:'Ranged', tlabel:'Ranged'},
+    {id:'machete', name:'Machete', desc:'Silent, tireless, always loaded.', stats:{combat:3}, trait:null},
+    {id:'armor', name:'Body Armor', desc:"What doesn't get through can't kill you.", stats:{health:4}, trait:null},
+    {id:'dog', name:'Stray Dog', desc:'Hears what you cannot.', stats:{combat:2}, trait:'Scout', tlabel:'Early Warning'},
+    {id:'crossbow', name:'Crossbow', desc:'Silent range. Slow to reload.', stats:{combat:3}, trait:'Ranged', tlabel:'Ranged'},
+    {id:'shield', name:'Riot Shield', desc:'What hits you, hits it instead.', stats:{combat:1,health:2}, trait:null},
+  ]},
+  { cat:'THE LAST SLOT', constraint:'One more thing. Make it count.', cards:[
+    {id:'radio', name:'Two-Way Radio', desc:'Someone out there is still broadcasting.', stats:{wits:1}, trait:'Signal', tlabel:'Call Rescue'},
+    {id:'map', name:'County Map', desc:"Every road, marked in a dead man's hand.", stats:{wits:3}, trait:'Navigate', tlabel:'Navigate'},
+    {id:'zippo', name:'Lucky Zippo', desc:'Warmth, signal, small mercy.', stats:{survival:1}, trait:'Fire', tlabel:'Make Fire'},
+    {id:'binocs', name:'Binoculars', desc:'See the danger before it sees you.', stats:{wits:2}, trait:'Scout', tlabel:'Scout Ahead'},
+    {id:'compass', name:'Compass', desc:'Never wrong about which way is out.', stats:{wits:2}, trait:'Navigate', tlabel:'Navigate'},
+    {id:'walkie', name:'Walkie Set', desc:'Short range, but somebody might be close.', stats:{wits:1}, trait:'Signal', tlabel:'Call Rescue'},
+  ]},
+];

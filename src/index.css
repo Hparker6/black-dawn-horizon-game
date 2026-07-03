@@ -1,0 +1,179 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: #141109;
+  font-family: "Special Elite", ui-monospace, monospace;
+}
+
+@keyframes bdhFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bdhOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes bdhSlip {
+  from {
+    opacity: 0;
+    transform: translateY(24px) rotate(-1deg) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bdhFlick {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+@keyframes bdhPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+@keyframes bdhGlow {
+  0%,
+  100% {
+    box-shadow: 0 4px 0 #a8801f, 0 0 0 rgba(212, 168, 67, 0);
+  }
+  50% {
+    box-shadow: 0 4px 0 #a8801f, 0 0 22px rgba(212, 168, 67, 0.5);
+  }
+}
+@keyframes bdhReel {
+  0% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(6px);
+  }
+}
+@keyframes bdhLand {
+  0% {
+    transform: translateY(-14px);
+    opacity: 0.2;
+  }
+  60% {
+    transform: translateY(3px);
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes bdhStamp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8) rotate(-18deg);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(-11deg);
+  }
+}
+@keyframes bdhFlipIn {
+  0% {
+    opacity: 0;
+    transform: rotateY(72deg) scale(0.88);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bdhFanIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+[data-noscroll]::-webkit-scrollbar {
+  display: none;
+}
+
+/* Condition-bar reaction: a hit shakes + flashes red, a heal rises + flashes
+   green. Added for the feedback/reactivity pass — the world state already
+   changed (hp), these just make that change visible in the same beat. */
+@keyframes hpShake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-3px);
+  }
+  40%,
+  60% {
+    transform: translateX(3px);
+  }
+}
+@keyframes hpRise {
+  0% {
+    transform: translateY(3px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes deltaFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.85);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) scale(1);
+  }
+}
+
+.bdh-press:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #000 !important;
+}
