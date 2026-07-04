@@ -1,4 +1,5 @@
 import * as t from "../styles/tokens.js";
+import { NEAR_END_EVENTS_LEFT } from "../engine/pacing.js";
 
 // A thin filling trail showing how far into the run this event sits, so a
 // run reads as a journey toward the coast rather than an open-ended stack
@@ -7,7 +8,7 @@ import * as t from "../styles/tokens.js";
 export default function ProgressTrail({ current, total }) {
   const pct = total > 1 ? Math.min(100, Math.round((current / (total - 1)) * 100)) : 100;
   const eventsLeft = total - 1 - current;
-  const near = eventsLeft <= 2;
+  const near = eventsLeft <= NEAR_END_EVENTS_LEFT;
 
   return (
     <div style={{ marginTop: "8px" }}>

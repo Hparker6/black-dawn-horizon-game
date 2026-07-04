@@ -1,23 +1,24 @@
 import * as t from "../styles/tokens.js";
-import { ENDING_RECAPS, GENERIC_DEATH_RECAP, GENERIC_SURVIVAL_RECAP } from "../data/endings.js";
+import { ENDINGS, ENDING_RECAPS, GENERIC_DEATH_RECAP, GENERIC_SURVIVAL_RECAP } from "../data/endings.js";
 
-export default function Results({ died, day, tier, ending, newAch, newEnding, loadout, shareLabel, onShare, onAgain }) {
+export default function Results({ died, day, tier, endingId, newAch, newEnding, loadout, shareLabel, onShare, onAgain }) {
   const headline = died ? "YOU DIED" : "YOU SURVIVED";
   const headColor = died ? t.blood : t.green;
-  const rEnding = ending || (died ? "Died on the road" : "Reached the Coast");
+  const endingMeta = endingId ? ENDINGS.find((e) => e.id === endingId) : null;
+  const rEnding = endingMeta ? endingMeta.label : died ? "Died on the road" : "Reached the Coast";
   const hasNewAch = newAch > 0;
   const rNewAch = `✦  ${newAch} NEW MEDAL${newAch > 1 ? "S" : ""} EARNED`;
 
-  // Each ending owns its own coherent recap (data/endings.js) instead of the
-  // last event's message getting stapled onto a generic died/survived
-  // template — that was how "Lost on the Sand" (a death) ended up reading
-  // "you reach the pad" (survival phrasing) for its fail-branch message.
-  // The `known.died === died` check is the actual safety net: if a data
-  // mistake ever paired a survival recap with `died:true` (or vice versa),
-  // this falls back to the generic recap rather than contradicting the
-  // outcome on screen.
+  // Each ending owns its own coherent recap (data/endings.js, keyed by the
+  // stable endingId) instead of the last event's message getting stapled
+  // onto a generic died/survived template — that was how "Lost on the
+  // Sand" (a death) ended up reading "you reach the pad" (survival
+  // phrasing) for its fail-branch message. The `known.died === died` check
+  // is the actual safety net: if a data mistake ever paired a survival
+  // recap with `died:true` (or vice versa), this falls back to the generic
+  // recap rather than contradicting the outcome on screen.
   const item = loadout[0] ? loadout[0].name : died ? "nothing" : "little";
-  const known = ending ? ENDING_RECAPS[ending] : null;
+  const known = endingId ? ENDING_RECAPS[endingId] : null;
   const recap = known && known.died === died ? known.recap(item, day) : died ? GENERIC_DEATH_RECAP(item, day) : GENERIC_SURVIVAL_RECAP(item, day);
 
   return (

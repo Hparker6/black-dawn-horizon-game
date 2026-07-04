@@ -17,35 +17,38 @@ export const ROOKIE_TIER = { id: "rookie", label: "Rookie" };
 export const ROOKIE_DEATH_DAY_CUTOFF = 8;
 
 // Recap text, one per named ending, so the results screen never has to
-// guess. Each entry owns `died` (must match the run's actual died state —
-// Results.jsx checks this before using the recap, so a data mistake here
-// fails safe onto the generic recap instead of contradicting the outcome)
-// and `recap(item, days)`, which stays coherent with that specific ending
-// rather than being stapled together from whatever the last event happened
-// to say. `item` is the top carried loadout item's name (or a died/survived
-// appropriate fallback word), `days` is the run length.
+// guess. Keyed by the ending's stable `id` (matches ENDINGS below) — NOT
+// its display `label` — so renaming an ending's label for flavor can never
+// silently disconnect it from its recap. Each entry owns `died` (must
+// match the run's actual died state — Results.jsx checks this before using
+// the recap, so a data mistake here fails safe onto the generic recap
+// instead of contradicting the outcome) and `recap(item, days)`, which
+// stays coherent with that specific ending rather than being stapled
+// together from whatever the last event happened to say. `item` is the
+// top carried loadout item's name (or a died/survived appropriate
+// fallback word), `days` is the run length.
 export const ENDING_RECAPS = {
-  "Military Rescue": {
+  military_rescue: {
     died: false,
     recap: (item, days) =>
       `You walked out of the dead city with ${item} and a plan half-formed. The radio finally answered — real, human, alive — and the helicopter found you before the horizon did. ${days} days after it started, someone came.`,
   },
-  "Signal Fire Rescue": {
+  signal_fire_rescue: {
     died: false,
     recap: (item, days) =>
       `You walked out of the dead city with ${item} and a plan half-formed. The fire you built on the bluff was the last thing you had left to try, and it was enough — the searchlight found you and held. ${days} days after it started, they saw you.`,
   },
-  "Ran the Gauntlet": {
+  ran_the_gauntlet: {
     died: false,
     recap: (item, days) =>
       `You walked out of the dead city with ${item} and a plan half-formed. The beach was longer than it looked and full of things that wanted you dead, but you crossed it on your own two feet and reached the pad standing. ${days} days after it started, that was enough.`,
   },
-  "Barely Made It": {
+  barely_made_it: {
     died: false,
     recap: (item, days) =>
       `You left the city with ${item} and the will to see the coast. The beach very nearly kept you — you crossed it bleeding, half-carried by momentum, and went down on the pad still breathing. ${days} days after it started, breathing was the whole victory.`,
   },
-  "Lost on the Sand": {
+  lost_on_the_sand: {
     died: true,
     recap: (item, days) =>
       `You left the city with ${item} and the will to see the coast. The beach was longer and fuller than it looked, and this time it didn't let go. You went down in sight of the pad, close enough to see the lights. ${days} days — the black dawn kept you, right at the end.`,
@@ -58,17 +61,17 @@ export const GENERIC_DEATH_RECAP = (item, days) =>
 export const GENERIC_SURVIVAL_RECAP = (item, days) =>
   `You walked out of the dead city with ${item} and a plan half-formed. ${days} days later, the horizon finally gave something back.`;
 
-ENDING_RECAPS["The Path Remembered"] = {
+ENDING_RECAPS["path_remembered"] = {
   died: false,
   recap: (item, days) =>
     `You walked out of the dead city with ${item} and a plan half-formed. Because you paid the toll instead of forcing it, split the find instead of taking it, and left food on a windowsill instead of walking past, the road kept giving back exactly when you needed it to. ${days} days after it started, the horizon opened for you like it remembered.`,
 };
-ENDING_RECAPS["Blood on the Sand"] = {
+ENDING_RECAPS["blood_on_the_sand"] = {
   died: false,
   recap: (item, days) =>
     `You walked out of the dead city with ${item} and a plan half-formed. You took what you needed at the bridge, and again at the pharmacy, and told yourself both times it was the only way through. Maybe it was. ${days} days after it started, you reached the coast — you just don't wear the same face you left with.`,
 };
-ENDING_RECAPS["Clean Hands"] = {
+ENDING_RECAPS["clean_hands"] = {
   died: false,
   recap: (item, days) =>
     `You walked out of the dead city with ${item} and a plan half-formed. You helped when it would have been easier not to, and every hand you could have forced open, you didn't. ${days} days after it started, you reached the coast the same person who left the city — which, out here, is its own kind of miracle.`,
@@ -123,3 +126,12 @@ export const ENDINGS = [
 ];
 
 export const SECRET_ENDINGS = ENDINGS.filter((e) => e.secret);
+
+// The one place an ending id gets turned into its display label — for
+// share text and analytics params, which want a human-readable string, not
+// the id. Everything that drives actual logic (achievements, the endings
+// collection, recap lookup) reads the id directly and never needs this.
+export function endingLabel(id) {
+  const e = ENDINGS.find((x) => x.id === id);
+  return e ? e.label : null;
+}

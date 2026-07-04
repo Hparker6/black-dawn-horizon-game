@@ -2,6 +2,7 @@
 import { diff } from "./difficulty.js";
 import { flagsAllow, addFlags } from "./flags.js";
 import { resolveSecretEnding } from "./endings.js";
+import { PACING, pickEventType } from "./pacing.js";
 
 export function rollD10() {
   return 1 + Math.floor(Math.random() * 10);
@@ -17,16 +18,41 @@ export function rollD10() {
 // `remainingSlots` counts down the run's planned non-final event count
 // (decided once at run start — see runEventsTarget in App.jsx); once it
 // hits 0, or once there's nothing left eligible to draw (pool exhausted by
-// excludeFlags/usedTitles), the final event is returned — a run always ends
+// excludeFlags/usedIds), the final event is returned — a run always ends
 // on "The Signal," which is exempt from flag gating for exactly this
 // reason: it must always be a valid pick, regardless of which flags did or
-// didn't get set. `usedTitles` guarantees no event repeats within a run.
-export function pickNextEvent({ allEvents, usedTitles, flags, remainingSlots }) {
+// didn't get set. `usedIds` (event `id`, not `title`) guarantees no event
+// repeats within a run — keyed by id so renaming an event's display title
+// can never affect which events have already been drawn.
+//
+// The draw itself is two-stage: engine/pacing.js first weighs *which type*
+// (quiet/discovery/danger/climax) fits this point in the run — via
+// `runEventsTarget` and `remainingSlots`, converted to a 0..1 progress, plus
+// `reliefBias` from the last outcome — then this function filters the
+// eligible pool to that type and picks uniformly within it. If that type
+// has nothing left to draw, it falls back through PACING.fallbackOrder
+// (nearest type in tone) before finally drawing from whatever's eligible at
+// all, so a thin pool degrades gracefully instead of erroring or repeating.
+export function pickNextEvent({ allEvents, usedIds, flags, remainingSlots, runEventsTarget, reliefBias }) {
   const finalEvent = allEvents.find((e) => e.final);
   if (remainingSlots <= 0) return finalEvent;
-  const eligible = allEvents.filter((e) => !e.final && !usedTitles.includes(e.title) && flagsAllow(e, flags));
+  const eligible = allEvents.filter((e) => !e.final && !usedIds.includes(e.id) && flagsAllow(e, flags));
   if (eligible.length === 0) return finalEvent;
-  return eligible[Math.floor(Math.random() * eligible.length)];
+
+  const progress = runEventsTarget > 0 ? 1 - remainingSlots / runEventsTarget : 0;
+  const type = pickEventType(progress, reliefBias);
+  const byType = (t) => eligible.filter((e) => (e.type || "discovery") === t);
+
+  let pool = byType(type);
+  if (pool.length === 0) {
+    for (const fallbackType of PACING.fallbackOrder[type] || []) {
+      pool = byType(fallbackType);
+      if (pool.length > 0) break;
+    }
+  }
+  if (pool.length === 0) pool = eligible;
+
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // Mirrors the roll+bonus vs needed math inside startDice()'s completion timeout.
@@ -40,15 +66,20 @@ export function resolveCheck(check, stats, difficulty) {
   return { roll, bonus, needed, total, success };
 }
 
-// Mirrors applyRes(res): folds a result object into day/hp/died/ending/gameOver,
+// Mirrors applyRes(res): folds a result object into day/hp/died/endingId/gameOver,
 // plus any flags the outcome sets (setFlags), merged into the run's flag list.
+//
+// `endingId` is a stable id (matches data/endings.js: ENDINGS[].id), never
+// a display label — res.endingId/res.deathEndingId on the final event's
+// choices carry ids for exactly this reason, so renaming an ending's label
+// can never disconnect it from achievements/the endings collection/recaps.
 //
 // `secretEndings` (data/endings.js: SECRET_ENDINGS) is checked only when
 // this result is an actual win (res.win or res.winIfAlive-and-alive) — i.e.
 // only at the final event. A secret ending, if the run's flags qualify for
-// one, overrides the `ending` the chosen final-event option would otherwise
-// have produced. Dying never triggers a secret ending — a death keeps its
-// own ending untouched.
+// one, overrides the `endingId` the chosen final-event option would
+// otherwise have produced. Dying never triggers a secret ending — a death
+// keeps its own ending untouched.
 export function applyResult(runState, res, difficulty, secretEndings = []) {
   const m = diff(difficulty);
   const day = runState.day + (res.days || 0);
@@ -57,21 +88,21 @@ export function applyResult(runState, res, difficulty, secretEndings = []) {
   const hp = Math.max(0, Math.min(runState.hpMax, runState.hp + dmg));
   const died = hp <= 0;
   const flags = addFlags(runState.flags, res.setFlags);
-  let ending = runState.ending;
+  let endingId = runState.endingId;
   let gameOver = false;
   if (res.win) {
-    ending = res.ending;
+    endingId = res.endingId;
     gameOver = true;
   } else if (res.winIfAlive) {
-    ending = died ? res.deathEnding : res.ending;
+    endingId = died ? res.deathEndingId : res.endingId;
     gameOver = true;
   }
   if (died) gameOver = true;
   if (!died && (res.win || res.winIfAlive)) {
     const secret = resolveSecretEnding(secretEndings, { died, flags });
-    if (secret) ending = secret.label;
+    if (secret) endingId = secret.id;
   }
-  return { day, hp, died, ending, gameOver, logEntry: res.msg, flags };
+  return { day, hp, died, endingId, gameOver, logEntry: res.msg, flags };
 }
 
 // Mirrors buildChoices(): classifies each choice as locked/ready/check/plain

@@ -315,3 +315,27 @@ body {
   transform: translateY(3px);
   box-shadow: 0 1px 0 #000 !important;
 }
+
+/* Danger atmosphere (components/DangerAtmosphere.jsx): a slight shake of
+   the whole journal panel the instant a hit lands while already hurt. Two
+   identical keyframes alternated by the component so the animation reliably
+   restarts on back-to-back hits without remounting the panel (which would
+   drop the live Draft/Events/Results state it wraps). */
+@keyframes bdhJournalShakeA {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-3px); }
+  40%, 60% { transform: translateX(3px); }
+}
+@keyframes bdhJournalShakeB {
+  10%, 90% { transform: translateX(1px); }
+  20%, 80% { transform: translateX(-2px); }
+  30%, 50%, 70% { transform: translateX(3px); }
+  40%, 60% { transform: translateX(-3px); }
+}
+/* The ink-bleed vignette's "heartbeat" — a slow breathing pulse in opacity,
+   sped up as condition drops (duration set inline per hp level). */
+@keyframes bdhHeartbeat {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}

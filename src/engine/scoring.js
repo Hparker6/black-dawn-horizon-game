@@ -12,8 +12,10 @@ export function tier({ died, day }) {
   return tierFor(day);
 }
 
-// Mirrors the achievement-unlock block inside finish().
-export function unlockAchievements({ ach, day, died, ending, runClutch, runFailed }) {
+// Mirrors the achievement-unlock block inside finish(). `endingId` is the
+// stable id (data/endings.js: ENDINGS[].id) — NOT the display label — so
+// renaming "Military Rescue" can never silently break the "rescue" medal.
+export function unlockAchievements({ ach, day, died, endingId, runClutch, runFailed }) {
   const un = new Set(ach);
   const before = un.size;
   const t = tier({ died, day });
@@ -21,7 +23,7 @@ export function unlockAchievements({ ach, day, died, ending, runClutch, runFaile
   if (day >= 20) un.add("survivor");
   if (day >= 34) un.add("veteran");
   if (!died && t === "Legend") un.add("legend");
-  if (ending === "Military Rescue") un.add("rescue");
+  if (endingId === "military_rescue") un.add("rescue");
   if (runClutch) un.add("clutch");
   if (!died && !runFailed) un.add("pacifist");
   if (died && day <= 3) un.add("unlucky");

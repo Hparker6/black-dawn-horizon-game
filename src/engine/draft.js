@@ -29,18 +29,20 @@ export function applyCardPick({ stats, hpMax, hp, traits, loadout }, card) {
     }
   }
   const nextTraits = card.trait ? [...traits, card.trait] : traits;
-  // stats carried alongside name/trait so a later dice check can attribute
-  // its bonus back to the specific drafted item(s) that produced it. rarity
-  // carried so the persistent loadout display (LoadoutStrip) can color-code
-  // each item the same way the draft card did.
-  const nextLoadout = [...loadout, { name: card.name, trait: card.trait, stats: card.stats, rarity: card.rarity }];
+  // id carried (stable, from data/items.js) alongside name/trait so a later
+  // sprint can look up "which items are in this loadout" by id instead of
+  // matching on the display name. stats carried so a later dice check can
+  // attribute its bonus back to the specific drafted item(s) that produced
+  // it. rarity carried so the persistent loadout display (LoadoutStrip) can
+  // color-code each item the same way the draft card did.
+  const nextLoadout = [...loadout, { id: card.id, name: card.name, trait: card.trait, stats: card.stats, rarity: card.rarity }];
   return { stats: nextStats, hpMax: nextHpMax, hp: nextHp, traits: nextTraits, loadout: nextLoadout };
 }
 
 // For a given stat (combat/survival/wits), returns the loadout items that
-// contributed to it, in draft order — e.g. [{name:'County Map', amount:3}].
+// contributed to it, in draft order — e.g. [{id:'map', name:'County Map', amount:3}].
 export function contributorsForStat(loadout, stat) {
   return loadout
     .filter((item) => item.stats && item.stats[stat])
-    .map((item) => ({ name: item.name, amount: item.stats[stat] }));
+    .map((item) => ({ id: item.id, name: item.name, amount: item.stats[stat] }));
 }
