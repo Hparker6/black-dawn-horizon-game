@@ -1,7 +1,8 @@
 import * as t from "../styles/tokens.js";
 import { ENDINGS, ENDING_RECAPS, GENERIC_DEATH_RECAP, GENERIC_SURVIVAL_RECAP } from "../data/endings.js";
+import { getEndingReflection } from "../engine/character-profile.js";
 
-export default function Results({ died, day, tier, endingId, newAch, newEnding, loadout, shareLabel, onShare, onAgain }) {
+export default function Results({ died, day, tier, endingId, newAch, newEnding, characterProfile, loadout, shareLabel, onShare, onAgain }) {
   const headline = died ? "YOU DIED" : "YOU SURVIVED";
   const headColor = died ? t.blood : t.green;
   const endingMeta = endingId ? ENDINGS.find((e) => e.id === endingId) : null;
@@ -20,6 +21,12 @@ export default function Results({ died, day, tier, endingId, newAch, newEnding, 
   const item = loadout[0] ? loadout[0].name : died ? "nothing" : "little";
   const known = endingId ? ENDING_RECAPS[endingId] : null;
   const recap = known && known.died === died ? known.recap(item, day) : died ? GENERIC_DEATH_RECAP(item, day) : GENERIC_SURVIVAL_RECAP(item, day);
+  // Closing journal reflection (engine/character-profile.js) — always
+  // appended after the plot recap, regardless of which ending this run hit,
+  // since it answers a different question (who the player became, not how
+  // the run ended). Rendered as a second paragraph of the same block so it
+  // never reads as a separate, system-labeled callout.
+  const reflection = getEndingReflection(characterProfile);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "28px 24px 24px", animation: "bdhFadeUp .5s ease both" }}>
@@ -60,7 +67,8 @@ export default function Results({ died, day, tier, endingId, newAch, newEnding, 
         ))}
       </div>
       <div style={{ borderLeft: `3px solid ${t.blood}`, padding: "2px 0 2px 14px", fontSize: "14px", lineHeight: 1.6, color: "#2a2620", fontStyle: "italic", textWrap: "pretty", flex: 1 }}>
-        {recap}
+        <p style={{ margin: "0 0 10px" }}>{recap}</p>
+        <p style={{ margin: 0 }}>{reflection}</p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "18px" }}>
         <button

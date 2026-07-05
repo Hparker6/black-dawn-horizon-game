@@ -75,12 +75,14 @@ export function resolveCheck(check, stats, difficulty) {
 // choices carry ids for exactly this reason, so renaming an ending's label
 // can never disconnect it from achievements/the endings collection/recaps.
 //
-// `secretEndings` (data/endings.js: SECRET_ENDINGS) is checked only when
-// this result is an actual win (res.win or res.winIfAlive-and-alive) — i.e.
-// only at the final event. A secret ending, if the run's flags qualify for
-// one, overrides the `endingId` the chosen final-event option would
-// otherwise have produced. Dying never triggers a secret ending — a death
-// keeps its own ending untouched.
+// `secretEndings` (data/endings.js: SECRET_ENDINGS) is checked whenever
+// this beat actually ends the run — gameOver, whether that's a survival
+// win at the final event or a death anywhere (an early death counts: a
+// themed death secret is tied to a flag set earlier in the run, not to
+// which specific event happened to land the killing blow). A secret
+// ending, if the run's flags/day qualify for one, overrides the `endingId`
+// the triggering outcome would otherwise have produced — resolveSecretEnding
+// itself keeps death-only and survival-only entries from ever crossing.
 export function applyResult(runState, res, difficulty, secretEndings = []) {
   const m = diff(difficulty);
   // Route choice (data/intro.js) nudges the day-cost of every event rather
@@ -105,8 +107,8 @@ export function applyResult(runState, res, difficulty, secretEndings = []) {
     gameOver = true;
   }
   if (died) gameOver = true;
-  if (!died && (res.win || res.winIfAlive)) {
-    const secret = resolveSecretEnding(secretEndings, { died, flags });
+  if (gameOver) {
+    const secret = resolveSecretEnding(secretEndings, { died, day, flags });
     if (secret) endingId = secret.id;
   }
   return { day, hp, died, endingId, gameOver, logEntry: res.msg, flags };
@@ -152,7 +154,10 @@ export function classifyChoices(event, traits, flags, difficulty) {
         badge = "✦  " + (c.reqLabel || "READY").toUpperCase() + "  ·  NO ROLL";
       } else if (c.check) {
         kind = "check";
-        badge = "⚄  " + c.check.label + " CHECK · NEED " + (c.check.needed + m.need);
+        // ⚠ (not the old ⚄ die) — matches Events.jsx's risky-choice roundel,
+        // and reads as "risky, your call" rather than a die glyph some
+        // fonts render as a blank/forbidden-looking box.
+        badge = "⚠  " + c.check.label + " CHECK · NEED " + (c.check.needed + m.need);
       }
       return { choice: c, kind, badge, hasBadge: true, locked };
     });

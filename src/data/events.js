@@ -8,6 +8,14 @@
 // 'danger' | 'climax' — that engine/pacing.js uses to shape a run's tension
 // curve. The final event (`final: true`) carries no type; it's exempt from
 // the pacing draw entirely (see pickNextEvent in engine/events.js).
+//
+// A choice may also carry an optional `characterImpact: { compassion: 1 }`
+// (or -1) — read by engine/character-profile.js, applied the instant the
+// choice is picked, regardless of whether it's a plain/trait choice or a
+// dice check that then succeeds or fails. Only choices that reveal who the
+// player is being toward other people (helping, sparing, sharing, sacrifice
+// vs. abandoning, robbing, taking) carry this; tactical/resource/route
+// choices never do. See character-profile.js for what it becomes.
 export const EVENTS = [
   { id:'event_pharmacy', title:'The Pharmacy', type:'discovery',
     body:['A pharmacy sits untouched, doors chained shut.','Medicine lines the shelves beyond the glass.'],
@@ -59,7 +67,7 @@ export const EVENTS = [
     choices:[
       { text:'Read them before you speak', requiredTrait:'Scout', reqLabel:'Scout Ahead',
         result:{days:3,health:1,msg:"You'd already counted the rifle's empty magazine. You approach easy, eat well, and leave richer.",tag:'TRADED UP'} },
-      { text:'Offer to trade and share the fire', check:{stat:'wits',needed:8,label:'WITS'},
+      { text:'Offer to trade and share the fire', characterImpact:{compassion:1}, check:{stat:'wits',needed:8,label:'WITS'},
         success:{days:4,health:2,msg:"You talk slow and honest. By dawn you've eaten, slept warm, and swapped stories worth more than the stew."},
         fail:{days:2,health:-3,msg:'They take your kindness for weakness. You leave the fire lighter than you came, and bleeding.'} },
       { text:'Slip past in the dark', check:{stat:'survival',needed:6,label:'SURVIVAL'},
@@ -158,7 +166,7 @@ export const EVENTS = [
   { id:'event_last_transmission', title:"The Last Transmission", type:'quiet',
     body:["A dead man's radio loops the same distress call, batteries still holding.",'His notebook lies open — half a frequency, written down.'],
     choices:[
-      { text:'Finish decoding his last transmission', requiredTrait:'Signal', reqLabel:'Call Rescue',
+      { text:'Finish decoding his last transmission', requiredTrait:'Signal', reqLabel:'Call Rescue', characterImpact:{compassion:1},
         result:{days:2,health:1,msg:'You know the protocol. The rest of the frequency clicks into place — a working relay, still listening.',tag:'RELAY FOUND'} },
       { text:'Piece together the frequency yourself', check:{stat:'wits',needed:7,label:'WITS'},
         success:{days:3,msg:'It takes longer without training, but you get there. The relay answers back.'},
@@ -169,7 +177,7 @@ export const EVENTS = [
   { id:'event_field_medics_cache', title:"The Field Medic's Cache", type:'quiet',
     body:["A medic's rucksack hangs from a shattered ambulance door.","Whoever left it didn't leave on their own terms."],
     choices:[
-      { text:"Sort the cache like you know what you're doing", requiredTrait:'Heal', reqLabel:'Treat Wounds',
+      { text:"Sort the cache like you know what you're doing", requiredTrait:'Heal', reqLabel:'Treat Wounds', characterImpact:{compassion:1},
         result:{days:1,health:3,msg:"You know exactly what's worth the weight. The rest you leave for whoever's luckier than the medic was.",tag:'KIT SECURED'} },
       { text:"Guess at what's useful", check:{stat:'wits',needed:6,label:'WITS'},
         success:{days:2,health:1,msg:'You grab everything that looks intact and sort it out later. Some of it\'s even useful.'},
@@ -213,20 +221,20 @@ export const EVENTS = [
   { id:'event_nursery_window', title:'The Nursery Window', type:'quiet',
     body:["A hand-lettered sign in a daycare window reads 'THREE KIDS, NO FOOD, PLEASE.'",'It looks empty. It probably isn\'t.'],
     choices:[
-      { text:'Leave what food you can spare',
+      { text:'Leave what food you can spare', characterImpact:{compassion:1},
         result:{days:1,health:-1,msg:'You leave half your rations on the sill and walk away without knocking. You never find out if it mattered.',tag:'GAVE WHAT YOU HAD',setFlags:['helped_nursery_kids']} },
-      { text:'Knock and offer to help', check:{stat:'wits',needed:6,label:'WITS'},
+      { text:'Knock and offer to help', characterImpact:{compassion:1}, check:{stat:'wits',needed:6,label:'WITS'},
         success:{days:3,msg:'A woman opens the door an inch, takes what you offer, and shuts it again. It\'s enough.',setFlags:['helped_nursery_kids']},
         fail:{days:2,health:-2,msg:"Whoever's inside doesn't trust strangers at the door. You leave the way you came, faster.",setFlags:['spooked_nursery']} },
-      { text:"Keep walking. You can't save everyone.",
+      { text:"Keep walking. You can't save everyone.", characterImpact:{compassion:-1},
         result:{days:1,msg:'The sign stays in the window behind you.',tag:'KEPT WALKING',setFlags:['ignored_nursery_kids']} },
     ]},
   { id:'event_toll_bridge', title:'The Toll Bridge', type:'danger',
     body:['Three survivors have chained the bridge and want a toll.',"They're armed, and thin. This isn't going well for them either."],
     choices:[
-      { text:"Pay what they're asking",
+      { text:"Pay what they're asking", characterImpact:{compassion:1},
         result:{days:1,health:-1,msg:'You hand over a share of your supplies. They lift the chain without a word.',tag:'PAID TOLL',setFlags:['paid_toll']} },
-      { text:'Push through the chain point', check:{stat:'combat',needed:8,label:'COMBAT'},
+      { text:'Push through the chain point', characterImpact:{compassion:-1}, check:{stat:'combat',needed:8,label:'COMBAT'},
         success:{days:1,msg:"You put one down before the other two decide the toll isn't worth dying for.",setFlags:['robbed_toll']},
         fail:{days:2,health:-3,msg:"Three against one is worse math than you thought. You pay double to walk away.",setFlags:['robbed_toll']} },
       { text:'Turn back and find another crossing',
@@ -235,19 +243,19 @@ export const EVENTS = [
   { id:'event_injured_stranger', title:'The Injured Stranger', type:'quiet',
     body:['A man is propped against a mile marker, leg bent wrong.','He has nothing to offer but his name.'],
     choices:[
-      { text:'Set the leg properly', requiredTrait:'Heal', reqLabel:'Treat Wounds',
+      { text:'Set the leg properly', requiredTrait:'Heal', reqLabel:'Treat Wounds', characterImpact:{compassion:1},
         result:{days:2,health:-1,msg:"You splint it right. He won't walk well for a month, but he'll walk. He gives you what little he's carrying, gratefully.",tag:'SET RIGHT'} },
-      { text:'Leave him water and move on',
+      { text:'Leave him water and move on', characterImpact:{compassion:1},
         result:{days:1,health:-1,msg:'You leave what you can spare and don\'t look back. It\'s not nothing.',tag:'LEFT SUPPLIES'} },
-      { text:'Keep walking',
+      { text:'Keep walking', characterImpact:{compassion:-1},
         result:{days:1,msg:'His voice follows you for a while. Then it doesn\'t.',tag:'KEPT WALKING'} },
     ]},
   { id:'event_dead_mans_locker', title:"The Dead Man's Locker", type:'quiet',
     body:['A storage locker has a name taped to it, a combination scratched below.',"Whoever left the hint never came back."],
     choices:[
-      { text:'Take everything of value',
+      { text:'Take everything of value', characterImpact:{compassion:-1},
         result:{days:1,health:1,msg:"You clear it out. It's someone's whole life in a metal box, and now it's supplies.",tag:'CLEARED OUT'} },
-      { text:'Take only what you need', check:{stat:'wits',needed:6,label:'WITS'},
+      { text:'Take only what you need', characterImpact:{compassion:1}, check:{stat:'wits',needed:6,label:'WITS'},
         success:{days:2,health:1,msg:'You leave the photos and the letters. You take the food and the batteries. It feels like the right split.'},
         fail:{days:1,msg:'You second-guess every item and end up taking almost nothing.'} },
       { text:'Leave it sealed',
@@ -256,9 +264,9 @@ export const EVENTS = [
   { id:'event_rival_scavenger', title:'The Rival Scavenger', type:'danger',
     body:['Another scavenger reaches the same pharmacy at the same moment.',"Neither got here first. Both need what's inside."],
     choices:[
-      { text:'Split the haul evenly',
+      { text:'Split the haul evenly', characterImpact:{compassion:1},
         result:{days:1,msg:'You divide what\'s left down the middle and go your separate ways. Nobody draws a weapon.',tag:'SPLIT EVEN',setFlags:['spared_scavenger']} },
-      { text:'Push them off the site', check:{stat:'combat',needed:7,label:'COMBAT'},
+      { text:'Push them off the site', characterImpact:{compassion:-1}, check:{stat:'combat',needed:7,label:'COMBAT'},
         success:{days:1,health:-1,msg:'You make it clear this find is yours. They leave cursing, but they leave.',setFlags:['robbed_scavenger']},
         fail:{days:2,health:-3,msg:"They're not backing down. You leave with less than you'd have gotten by sharing."} },
       { text:'Walk away and find somewhere else',
@@ -333,7 +341,7 @@ export const EVENTS = [
     choices:[
       { text:"Point to what you did at the nursery — you're not what they think", requiresFlags:['helped_nursery_kids'], flagLabel:'a reputation for mercy',
         result:{days:1,msg:'Word travels. One of them lowers their weapon first. The rest follow, uneasy but not fighting.',tag:'REPUTATION HELD'} },
-      { text:'Fight through again', check:{stat:'combat',needed:9,label:'COMBAT'},
+      { text:'Fight through again', characterImpact:{compassion:-1}, check:{stat:'combat',needed:9,label:'COMBAT'},
         success:{days:2,health:-2,msg:'You break through a second time, but it costs more than the first.'},
         fail:{days:1,health:-5,msg:'Three against one, twice now. You barely crawl clear of the ambush.'} },
       { text:'Try to talk your way out',
@@ -355,10 +363,10 @@ export const EVENTS = [
     choices:[
       { text:"Point to what you did at the nursery — you're not a monster", requiresFlags:['helped_nursery_kids'], flagLabel:'a reputation for mercy',
         result:{days:1,health:-1,msg:"They hesitate. Whatever they heard about you, it doesn't fully match what they're hearing now. They let you pass, watching.",tag:'HESITATED'} },
-      { text:'Stand your ground', check:{stat:'combat',needed:9,label:'COMBAT'},
+      { text:'Stand your ground', characterImpact:{compassion:-1}, check:{stat:'combat',needed:9,label:'COMBAT'},
         success:{days:1,health:-2,msg:'Numbers or not, you make it clear this ends the same way it started.'},
         fail:{days:1,health:-5,msg:'This time they came prepared. You barely get away.'} },
-      { text:'Give up what you took and go',
+      { text:'Give up what you took and go', characterImpact:{compassion:1},
         result:{days:1,msg:'You hand back more than you took, just to end it. They let you leave.',tag:'PAID BACK'} },
     ]},
   { id:'event_nursery_repaid', title:'The Nursery, Repaid', type:'quiet', requiresFlags:['helped_nursery_kids'], excludeFlags:['ignored_nursery_kids'],
@@ -369,18 +377,18 @@ export const EVENTS = [
       { text:'Look for where they went', check:{stat:'wits',needed:5,label:'WITS'},
         success:{days:2,health:1,msg:'A chalked arrow on the curb leads to a safer block. They made it out, and left you a map.',tag:'FOUND THE ARROW'},
         fail:{days:1,msg:"Whatever trail they left, you can't read it. You take the bag and move on."} },
-      { text:'Leave it for the next person who needs it more',
+      { text:'Leave it for the next person who needs it more', characterImpact:{compassion:1},
         result:{days:1,msg:"You leave the bag exactly where it sat. Someone else's turn.",tag:'LEFT IT'} },
     ]},
   { id:'event_locked_door_still_locked', title:'The Locked Door, Still Locked', type:'quiet', requiresFlags:['ignored_nursery_kids'], excludeFlags:['helped_nursery_kids'],
     body:['You pass the daycare again — the road just bends back this way.',"The sign's still in the window. Nothing else has changed."],
     choices:[
-      { text:'Knock this time',
+      { text:'Knock this time', characterImpact:{compassion:1},
         result:{days:1,health:-1,msg:'No one answers. No one was ever going to, not anymore. You should have known that before you knocked.',tag:'TOO LATE'} },
       { text:'Search the building anyway', check:{stat:'wits',needed:6,label:'WITS'},
         success:{days:2,msg:"Whoever was inside is long gone. You find a little of what they couldn't carry.",tag:'SEARCHED'},
         fail:{days:1,health:-1,msg:'The building gives you nothing back. Some doors stay closed even after you open them.'} },
-      { text:'Keep walking. Same as before.',
+      { text:'Keep walking. Same as before.', characterImpact:{compassion:-1},
         result:{days:1,msg:"You don't slow down this time either. It's easier the second time. That's the part that stays with you.",tag:'KEPT WALKING'} },
     ]},
 

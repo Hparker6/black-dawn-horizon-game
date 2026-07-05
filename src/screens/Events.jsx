@@ -13,10 +13,21 @@ import EventReaction from "../components/EventReaction.jsx";
 // bold/confident (solid green fill, filled roundel), safe is quiet (pale
 // wash, outline roundel), so "no risk" and "you're specifically equipped
 // for this" don't blur into the same read.
+//
+// "check" (risky) used to be a solid blood-red filled circle around a die
+// glyph — which, glyph-rendering aside, is exactly the universal "stop/
+// forbidden/error" visual (solid red circle + X-ish mark), so players read
+// it as blocked and avoided clicking it. A risky choice must look
+// CLICKABLE and tempting, just dangerous — so it's now an amber hazard
+// roundel (same warm gold as the CHECK badge below) with a red warning
+// glyph, full opacity, solid border, no dashing, no reduced contrast —
+// nothing here says "can't," only "should you." Only "locked" gets the
+// dead/disabled treatment (dashed border, diagonal hazard stripes, reduced
+// opacity, not-allowed cursor) so the two never read alike.
 function kindMeta(kind) {
   if (kind === "locked") return { icon: "🔒", roundelBg: t.badgeLockedBg, roundelColor: t.muted, roundelBorder: t.borderDashed };
   if (kind === "ready") return { icon: "✦", roundelBg: t.green, roundelColor: t.paper, roundelBorder: t.green };
-  if (kind === "check") return { icon: "⚄", roundelBg: t.blood, roundelColor: t.paper, roundelBorder: t.blood };
+  if (kind === "check") return { icon: "⚠", roundelBg: t.badgeCheckBg, roundelColor: t.blood, roundelBorder: t.blood };
   return { icon: "✓", roundelBg: t.safeBg, roundelColor: t.green, roundelBorder: t.safeBorder }; // plain/safe
 }
 
@@ -36,7 +47,10 @@ function choiceStyle(kind) {
   if (kind === "locked")
     return { ...base, cursor: "not-allowed", border: `1px dashed ${t.borderDashed}`, background: `repeating-linear-gradient(45deg,${t.lockedStripeA} 0 6px,${t.lockedStripeB} 6px 12px)`, opacity: 0.72 };
   if (kind === "ready") return { ...base, cursor: "pointer", border: `1px solid ${t.green}`, background: t.readyBg, boxShadow: "0 2px 0 #2d5a3d" };
-  if (kind === "check") return { ...base, cursor: "pointer", border: `1px solid ${t.checkBorder}`, background: t.checkBg, boxShadow: "0 2px 0 rgba(198,40,40,.35)" };
+  // Full-strength red border (not the old 45%-opacity wash) so it reads as
+  // vividly dangerous, but the fill stays light and the button is exactly
+  // as clickable/full-opacity as every non-locked kind — alive, not blocked.
+  if (kind === "check") return { ...base, cursor: "pointer", border: `1px solid ${t.blood}`, background: t.checkBg, boxShadow: "0 2px 0 rgba(198,40,40,.5)" };
   return { ...base, cursor: "pointer", border: `1px solid ${t.safeBorder}`, background: t.safeBg, boxShadow: "0 2px 0 #6f8c6c" }; // plain/safe
 }
 
@@ -81,7 +95,7 @@ function IconRoundel({ kind }) {
 // behind a modal). This screen owns only the event card itself: title, body,
 // and either the choice list or — once a plain/trait choice has resolved —
 // the inline EventReaction in its place.
-export default function Events({ event, traits, flags, difficulty, reacting, reaction, onChoose, onReactionContinue }) {
+export default function Events({ event, traits, flags, difficulty, reacting, reaction, routeFlavor, reflection, onChoose, onReactionContinue }) {
   const classified = classifyChoices(event, traits, flags, difficulty);
 
   return (
@@ -95,6 +109,26 @@ export default function Events({ event, traits, flags, difficulty, reacting, rea
             {line}
           </p>
         ))}
+        {/* Occasional route callout (engine/pacing.js's routeFlavorFor) — only
+            ever present when this event's type actually matches the route's
+            premise, so it reads as the road commenting on what's happening
+            right now, not a repeated tagline. Visible on every viewport
+            width (unlike the wide-screen-only FIELD NOTE margin scrap in
+            App.jsx), since the whole point is that every player feels it. */}
+        {routeFlavor && (
+          <p style={{ fontSize: "13px", lineHeight: 1.5, color: t.muted, fontStyle: "italic", margin: "0 0 12px", borderLeft: `2px solid ${t.borderDashed}`, paddingLeft: "10px" }}>
+            {routeFlavor}
+          </p>
+        )}
+        {/* A rare, quiet journal aside (engine/character-profile.js) — never
+            a system-labeled callout, just another line of the same page, so
+            it reads as the player's own hand noticing something rather than
+            a game mechanic surfacing. */}
+        {reflection && (
+          <p style={{ fontSize: "13px", lineHeight: 1.5, color: t.muted, fontStyle: "italic", margin: "0 0 12px", borderLeft: `2px solid ${t.borderDashed}`, paddingLeft: "10px" }}>
+            {reflection}
+          </p>
+        )}
       </div>
       {/* A classic scene-break rule — thin lines flanking the ornament — reads
           as a deliberate typographic pause between the entry and the choices

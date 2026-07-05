@@ -77,19 +77,56 @@ ENDING_RECAPS["clean_hands"] = {
     `You walked out of the dead city with ${item} and a plan half-formed. You helped when it would have been easier not to, and every hand you could have forced open, you didn't. ${days} days after it started, you reached the coast the same person who left the city — which, out here, is its own kind of miracle.`,
 };
 
+// Sprint 2 endings pass — five more secrets, covering the shapes the first
+// three didn't: an unusually long survival, both route choices from the
+// intro, and — new territory for this file — themed DEATHS instead of only
+// themed survivals. Each recap explicitly names the choice(s) that earned
+// it, per the same rule as the three above: the player should be able to
+// trace the ending back to a decision, not just read it as flavor text.
+ENDING_RECAPS["endless_road"] = {
+  died: false,
+  recap: (item, days) =>
+    `You walked out of the dead city with ${item} and a plan half-formed. ${days} days is not a number most people reach — you outlasted the calendar itself, one more morning and then another, long after the horizon should have given up on you. Nobody survives that long by accident.`,
+};
+ENDING_RECAPS["ghost_of_the_highway"] = {
+  died: false,
+  recap: (item, days) =>
+    `You walked out of the dead city with ${item} and a plan half-formed. You took the highways the whole way — the fast roads, the seen roads — betting speed against every set of eyes between you and the coast. Because you never once slowed down for the backroads, ${days} days after it started you outran the horizon instead of outlasting it.`,
+};
+ENDING_RECAPS["the_long_road_home"] = {
+  died: false,
+  recap: (item, days) =>
+    `You walked out of the dead city with ${item} and a plan half-formed. You kept to the backroads the whole way — the slow roads, the quiet ones — trading time for the chance that nothing would ever see you coming. Because you never once risked the highway, ${days} days after it started you arrived a little late, and a lot more careful.`,
+};
+ENDING_RECAPS["paid_in_full"] = {
+  died: true,
+  recap: (item, days) =>
+    `You left the city with ${item} and the will to see the coast. You took the toll bridge by force, and the pharmacy split by force, and told yourself both times the road owed you that much. It didn't. Because you took twice and gave back nothing, the black dawn collected what you owed ${days} days in — the road remembers, even when it doesn't say so out loud.`,
+};
+ENDING_RECAPS["price_of_kindness"] = {
+  died: true,
+  recap: (item, days) =>
+    `You left the city with ${item} and the will to see the coast. You gave what you could spare when you didn't have to — to strangers, to kids behind a locked door, to anyone who asked. Because you never once took more than you gave, ${days} days in, the road took the one thing it never gives back. It wasn't fair. None of this ever was.`,
+};
+
 // The full ending collection — everything a run can end on, named and
 // trackable, whether the player discovered it by dice roll (the base 5,
-// always eligible) or by earning it through flags (the 3 secrets). One
+// always eligible) or by earning it through flags/day (the secrets). One
 // source of truth for three consumers: the results screen (via
 // ENDING_RECAPS above, keyed by `label`), the secret-ending resolver in
 // engine/endings.js (SECRET_ENDINGS, filtered below), and the Endings
 // Collection screen (the full list, "?????" for undiscovered secrets).
 //
-// Secret endings only ever apply on top of a WIN (reached the coast alive)
-// — see engine/endings.js. Order matters: it's the priority order when a
-// run's flags could satisfy more than one (e.g. "The Path Remembered"
-// implies "Clean Hands" is also technically true — no robbed_* flags — so
-// the more specific one must be checked first).
+// Secret endings apply on top of whichever outcome actually ended the run —
+// a survival win (`died` omitted/false below) or a death (`died: true`),
+// anywhere in the run, not just at the final event — see engine/endings.js
+// and engine/events.js's applyResult. `died` keeps the two pools from ever
+// competing with each other; order only matters *within* a pool, since
+// that's the priority when a run's flags/day could satisfy more than one.
+// Broad rule of thumb applied below: rarer/more-specific conditions first
+// (an unusually long survival, then a 3-flag combo, then 2-flag, then
+// 1-flag+excludes), with the single-flag route endings last since picking
+// a route is the easiest condition here to satisfy — everyone picks one.
 export const ENDINGS = [
   { id: "military_rescue", label: "Military Rescue", secret: false, desc: "Call in a rescue with the right gear already in hand." },
   { id: "signal_fire_rescue", label: "Signal Fire Rescue", secret: false, desc: "Light the bluff and let the searchlight find you." },
@@ -97,9 +134,18 @@ export const ENDINGS = [
   { id: "barely_made_it", label: "Barely Made It", secret: false, desc: "Survive the dash for the pad, just barely." },
   { id: "lost_on_the_sand", label: "Lost on the Sand", secret: false, desc: "Fail the dash for the pad and go down in sight of it." },
   {
+    id: "endless_road",
+    label: "The One Who Wouldn't Stop",
+    secret: true,
+    died: false,
+    dayMin: 40,
+    desc: "Survive a run far longer than anyone has a right to.",
+  },
+  {
     id: "path_remembered",
     label: "The Path Remembered",
     secret: true,
+    died: false,
     requiresFlags: ["paid_toll", "spared_scavenger", "helped_nursery_kids"],
     desc: "Reach the coast having earned trust at every turn.",
   },
@@ -107,6 +153,7 @@ export const ENDINGS = [
     id: "blood_on_the_sand",
     label: "Blood on the Sand",
     secret: true,
+    died: false,
     requiresFlags: ["robbed_toll", "robbed_scavenger"],
     desc: "Reach the coast having taken what you needed, twice over.",
   },
@@ -114,6 +161,7 @@ export const ENDINGS = [
     id: "clean_hands",
     label: "Clean Hands",
     secret: true,
+    died: false,
     // Requires proof of active mercy (helped_nursery_kids), not just the
     // absence of the two robbed_* flags on its own — a run that simply
     // never drew the toll bridge or rival scavenger events would otherwise
@@ -122,6 +170,42 @@ export const ENDINGS = [
     requiresFlags: ["helped_nursery_kids"],
     excludeFlags: ["robbed_toll", "robbed_scavenger"],
     desc: "Reach the coast having helped when it cost you nothing to walk past, and taken nothing you didn't earn.",
+  },
+  {
+    id: "ghost_of_the_highway",
+    label: "Ghost of the Highway",
+    secret: true,
+    died: false,
+    requiresFlags: ["route_highway"],
+    desc: "Take the fast, exposed roads the whole way — and still make it.",
+  },
+  {
+    id: "the_long_road_home",
+    label: "The Long Road Home",
+    secret: true,
+    died: false,
+    requiresFlags: ["route_backroads"],
+    desc: "Keep to the quiet backroads the whole way — patience over speed.",
+  },
+  {
+    id: "paid_in_full",
+    label: "Paid in Full",
+    secret: true,
+    died: true,
+    requiresFlags: ["robbed_toll", "robbed_scavenger"],
+    desc: "Take what you needed, twice over — and never reach the coast.",
+  },
+  {
+    id: "price_of_kindness",
+    label: "The Price of Kindness",
+    secret: true,
+    died: true,
+    // Mirrors Clean Hands' exclusion so the two death-side secrets stay as
+    // cleanly separated as their survival-side counterparts: a run that
+    // was both ruthless and once-kind reads as Paid in Full, not this.
+    requiresFlags: ["helped_nursery_kids"],
+    excludeFlags: ["robbed_toll", "robbed_scavenger"],
+    desc: "Help when it costs you, right up until it costs you everything.",
   },
 ];
 

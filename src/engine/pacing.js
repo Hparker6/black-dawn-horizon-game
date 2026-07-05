@@ -82,14 +82,18 @@ export function pickEventType(progress, reliefBias, dangerWeightMultiplier = 1) 
 // run's normal flags array like any other narrative flag, read here rather
 // than threaded as a separate parameter so the two call sites that need it
 // (pickNextEvent's type weighting, applyResult's day math) don't need their
-// own signatures touched. Tuned to nudge the outcome distribution, not
-// swing it wildly: highway trades a real bump in danger/climax exposure for
-// fewer days burned per event (faster, riskier); backroads trades the
-// reverse (slower, safer). Both are single multipliers here so the feel is
-// adjustable without touching the sampler or applyResult itself.
+// own signatures touched.
+//
+// Widened after the first pass read as imperceptible: three levers now
+// compound instead of one modest one — a much bigger danger-weight swing,
+// a much bigger days-per-event swing, AND the run's planned event COUNT
+// itself shifts (see eventCountDelta, applied to MIN/MAX_RUN_EVENTS in
+// App.jsx) — so highway is a shorter run with more teeth in it, backroads a
+// longer run with fewer, and the two outcome distributions actually pull
+// apart instead of overlapping into the same ~20-something-day average.
 export const ROUTE_MODIFIERS = {
-  route_highway: { label: 'THE HIGHWAYS', dangerWeightMultiplier: 1.35, daysPerEventMultiplier: 0.82 },
-  route_backroads: { label: 'THE BACKROADS', dangerWeightMultiplier: 0.7, daysPerEventMultiplier: 1.22 },
+  route_highway: { label: 'THE HIGHWAYS', dangerWeightMultiplier: 1.9, daysPerEventMultiplier: 0.7, eventCountDelta: -2 },
+  route_backroads: { label: 'THE BACKROADS', dangerWeightMultiplier: 0.4, daysPerEventMultiplier: 1.2, eventCountDelta: 1 },
 };
 
 export function routeFromFlags(flags) {
@@ -100,7 +104,63 @@ export function routeFromFlags(flags) {
 }
 
 export function routeModifier(route) {
-  return ROUTE_MODIFIERS[route] || { label: null, dangerWeightMultiplier: 1, daysPerEventMultiplier: 1 };
+  return ROUTE_MODIFIERS[route] || { label: null, dangerWeightMultiplier: 1, daysPerEventMultiplier: 1, eventCountDelta: 0 };
+}
+
+// Occasional in-fiction callouts so the route choice is FELT mid-run, not
+// just measured in hidden math. Only surfaces when the route's whole
+// premise is thematically live for the event on screen — highway lines on
+// a danger/climax beat ("yeah, this is what exposure costs"), backroads
+// lines on a quiet/discovery beat ("yeah, this is what the extra time
+// buys") — so it always reads as commentary on what's actually happening,
+// never a random aside. Even then it's not constant (see routeFlavorFor's
+// showChance) so it stays a beat, not a tagline repeated every screen.
+const ROUTE_FLAVOR = {
+  route_highway: {
+    danger: [
+      "The highway leaves you exposed — trouble comes quick.",
+      "Open road, open sightlines. Someone was bound to notice.",
+      "Fast roads don't stay quiet for long.",
+    ],
+    climax: [
+      "This is what the highway was always going to cost.",
+      "No cover out here. There never was.",
+    ],
+  },
+  route_backroads: {
+    quiet: [
+      "The backroads are slow, but the quiet holds.",
+      "Nobody finds you out here. That's the idea.",
+    ],
+    discovery: [
+      "Slow going, but nothing's found you yet.",
+      "The long way round still gets you there — and gets you here first.",
+    ],
+  },
+};
+
+// Small stable string hash (djb2-ish) — used instead of Math.random() so the
+// same event always shows the same flavor line (or none) across re-renders,
+// rather than flickering between choices while it's on screen.
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+// ~40% of thematically-matching events show a line — frequent enough to
+// register as "the route keeps mattering," rare enough not to feel like a
+// repeating tagline under every danger event on a highway run.
+const ROUTE_FLAVOR_SHOW_RATE = 0.4;
+
+export function routeFlavorFor(route, eventType, eventId) {
+  const pool = ROUTE_FLAVOR[route] && ROUTE_FLAVOR[route][eventType];
+  if (!pool || pool.length === 0) return null;
+  const hash = hashString(`${route}:${eventId}`);
+  if (hash % 100 >= ROUTE_FLAVOR_SHOW_RATE * 100) return null;
+  return pool[hash % pool.length];
 }
 
 // A choice outcome counts as a "significant setback" — and triggers the

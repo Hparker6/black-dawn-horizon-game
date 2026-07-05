@@ -5,13 +5,14 @@ import { EVENTS } from "./data/events.js";
 import { diff } from "./engine/difficulty.js";
 import { shuffleFour, applyCardPick, contributorsForStat } from "./engine/draft.js";
 import { rollD10, resolveCheck, applyResult, pickNextEvent } from "./engine/events.js";
-import { isSignificantSetback, routeFromFlags } from "./engine/pacing.js";
+import { isSignificantSetback, routeFromFlags, routeModifier, routeFlavorFor } from "./engine/pacing.js";
 import { tier, unlockAchievements } from "./engine/scoring.js";
 import { ENDINGS, SECRET_ENDINGS, endingLabel } from "./data/endings.js";
 import { INTRO_SCREENS } from "./data/intro.js";
 import { shareRun, SHARE_LABEL_DEFAULT, SHARE_LABEL_SHARED, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
 import { trackEvent } from "./engine/analytics.js";
 import { loadSave, writeSave } from "./engine/save.js";
+import { createProfile, applyChoiceImpact, checkMidRunReflection } from "./engine/character-profile.js";
 
 import Ribbon from "./components/Ribbon.jsx";
 import DiceOverlay from "./components/DiceOverlay.jsx";
@@ -85,6 +86,15 @@ function initialState() {
     // callback events mid-run the moment their flags are satisfied (see
     // pickNextEvent in engine/events.js).
     flags: [],
+    // Hidden character reflection axis (engine/character-profile.js) — never
+    // read by pacing/events/endings logic, only by the mid-run aside below
+    // and Results.jsx's closing reflection. shownReflectionTiers tracks
+    // which mid-run lines have already fired this run so none repeats.
+    characterProfile: createProfile(),
+    shownReflectionTiers: [],
+    // Set only on the turn a new reflection tier fires; shown once on the
+    // following event card (see Events.jsx) then cleared by the next choice.
+    reflection: null,
     // Whether the most recently resolved event was a significant setback
     // (failed check or notable condition damage) — read by finishOrAdvance
     // as the "relief valve" bias for the next pickNextEvent() draw, so a
@@ -255,7 +265,15 @@ export default function App() {
         setState((prev) => ({ ...prev, draftRound: prev.draftRound + 1, draftPhase: "idle", draftCards: [], pickedId: null, ...updated }));
         return;
       }
-      const runEventsTarget = MIN_RUN_EVENTS + Math.floor(Math.random() * (MAX_RUN_EVENTS - MIN_RUN_EVENTS + 1));
+      // Route shifts the planned event COUNT too (see eventCountDelta in
+      // engine/pacing.js), not just danger weighting and days-per-event —
+      // a highway run is a genuinely shorter checklist, backroads genuinely
+      // longer, compounding with the other two levers instead of leaving
+      // run length to those alone.
+      const { eventCountDelta } = routeModifier(routeFromFlags(cur.flags));
+      const targetMin = MIN_RUN_EVENTS + eventCountDelta;
+      const targetMax = MAX_RUN_EVENTS + eventCountDelta;
+      const runEventsTarget = targetMin + Math.floor(Math.random() * (targetMax - targetMin + 1));
       // cur.flags (not []) — carries the intro's route choice (onChooseRoute,
       // set before the draft even started) through to the very first
       // pickNextEvent call, so route affects event weighting from event 1.
@@ -281,6 +299,9 @@ export default function App() {
         // flags NOT reset here — it already holds only the route flag (set
         // by onChooseRoute before the draft began; nothing in the draft
         // itself touches flags), and needs to survive into the run.
+        characterProfile: createProfile(),
+        shownReflectionTiers: [],
+        reflection: null,
         lastSetback: false,
         endingId: null,
         died: false,
@@ -313,6 +334,8 @@ export default function App() {
       return;
     }
     const applied = applyResult(state, choice.result, DIFFICULTY, SECRET_ENDINGS);
+    const characterProfile = applyChoiceImpact(state.characterProfile, choice.characterImpact);
+    const midRun = choice.characterImpact ? checkMidRunReflection(characterProfile, state.shownReflectionTiers) : null;
     trackEvent("choice_selected", {
       event_id: curEvent.id,
       event_title: curEvent.title,
@@ -337,6 +360,9 @@ export default function App() {
       flags: applied.flags,
       lastSetback: isSignificantSetback({ health: choice.result.health, success: true }),
       log: [...prev.log, applied.logEntry],
+      characterProfile,
+      shownReflectionTiers: midRun ? [...prev.shownReflectionTiers, midRun.key] : prev.shownReflectionTiers,
+      reflection: midRun ? midRun.text : null,
       reacting: true,
       reaction: choice.result,
     }));
@@ -357,6 +383,8 @@ export default function App() {
       const { roll, bonus, needed, total, success } = resolveCheck(choice.check, cur.stats, DIFFICULTY);
       const res = success ? choice.success : choice.fail;
       const applied = applyResult(cur, res, DIFFICULTY, SECRET_ENDINGS);
+      const characterProfile = applyChoiceImpact(cur.characterProfile, choice.characterImpact);
+      const midRun = choice.characterImpact ? checkMidRunReflection(characterProfile, cur.shownReflectionTiers) : null;
       trackEvent("choice_selected", {
         event_id: curEvent.id,
         event_title: curEvent.title,
@@ -383,6 +411,9 @@ export default function App() {
         flags: applied.flags,
         lastSetback: isSignificantSetback({ health: res.health, success }),
         log: [...prev.log, applied.logEntry],
+        characterProfile,
+        shownReflectionTiers: midRun ? [...prev.shownReflectionTiers, midRun.key] : prev.shownReflectionTiers,
+        reflection: midRun ? midRun.text : null,
         dice: { phase: "done", roll, bonus, total, needed, success, label: choice.check.label, contributors, msg: res.msg, tag: res.tag },
         runClutch: prev.runClutch || (success && needed >= 10),
         runFailed: prev.runFailed || !success,
@@ -507,6 +538,12 @@ export default function App() {
 
   const currentEvent = state.runEvents[state.eventIndex] || state.runEvents[0] || EVENTS[0];
   const currentTier = tier({ died: state.died, day: state.day });
+  // Occasional route callout (see engine/pacing.js) — only ever non-null
+  // when the current event's type actually matches the route's premise
+  // (danger/climax for highway, quiet/discovery for backroads), and even
+  // then only part of the time, so it reads as commentary on this specific
+  // beat rather than a banner repeated on every screen.
+  const routeFlavor = routeFlavorFor(routeFromFlags(state.flags), currentEvent.type, currentEvent.id);
 
   return (
     <div
@@ -640,6 +677,8 @@ export default function App() {
                         difficulty={DIFFICULTY}
                         reacting={state.reacting}
                         reaction={state.reaction}
+                        routeFlavor={routeFlavor}
+                        reflection={state.reflection}
                         onChoose={chooseOption}
                         onReactionContinue={onContinue}
                       />
@@ -682,6 +721,7 @@ export default function App() {
                       endingId={state.endingId}
                       newAch={state.newAch}
                       newEnding={state.newEnding}
+                      characterProfile={state.characterProfile}
                       loadout={state.loadout}
                       shareLabel={state.shareLabel}
                       onShare={onShare}
