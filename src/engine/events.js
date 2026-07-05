@@ -2,7 +2,7 @@
 import { diff } from "./difficulty.js";
 import { flagsAllow, addFlags } from "./flags.js";
 import { resolveSecretEnding } from "./endings.js";
-import { PACING, pickEventType } from "./pacing.js";
+import { PACING, pickEventType, routeFromFlags, routeModifier } from "./pacing.js";
 
 export function rollD10() {
   return 1 + Math.floor(Math.random() * 10);
@@ -40,7 +40,8 @@ export function pickNextEvent({ allEvents, usedIds, flags, remainingSlots, runEv
   if (eligible.length === 0) return finalEvent;
 
   const progress = runEventsTarget > 0 ? 1 - remainingSlots / runEventsTarget : 0;
-  const type = pickEventType(progress, reliefBias);
+  const { dangerWeightMultiplier } = routeModifier(routeFromFlags(flags));
+  const type = pickEventType(progress, reliefBias, dangerWeightMultiplier);
   const byType = (t) => eligible.filter((e) => (e.type || "discovery") === t);
 
   let pool = byType(type);
@@ -82,7 +83,13 @@ export function resolveCheck(check, stats, difficulty) {
 // keeps its own ending untouched.
 export function applyResult(runState, res, difficulty, secretEndings = []) {
   const m = diff(difficulty);
-  const day = runState.day + (res.days || 0);
+  // Route choice (data/intro.js) nudges the day-cost of every event rather
+  // than any single event's authored value — highway burns fewer days per
+  // stop (faster, riskier via pickNextEvent's danger weighting above),
+  // backroads more (slower, safer). Rounded so a 1-day event never rounds
+  // to 0 and stalls the destination ETA.
+  const { daysPerEventMultiplier } = routeModifier(routeFromFlags(runState.flags));
+  const day = runState.day + Math.max(res.days ? 1 : 0, Math.round((res.days || 0) * daysPerEventMultiplier));
   let dmg = res.health || 0;
   if (dmg < 0) dmg = Math.round(dmg * m.dmg);
   const hp = Math.max(0, Math.min(runState.hpMax, runState.hp + dmg));
@@ -113,6 +120,11 @@ export function applyResult(runState, res, difficulty, secretEndings = []) {
 // list entirely (it no longer makes narrative sense to offer it), while
 // requiresFlags shows it locked — same visual treatment as a missing trait —
 // since "you haven't earned this option yet" is the same idea either way.
+//
+// Every kind now returns a badge (plain gets "SAFE" instead of none) so the
+// choice-hierarchy pass in Events.jsx never depends on color/icon alone —
+// there's always a plain-language label backing it up, for colorblind
+// players and anyone skimming fast.
 export function classifyChoices(event, traits, flags, difficulty) {
   const m = diff(difficulty);
   return (event.choices || [])
@@ -131,8 +143,7 @@ export function classifyChoices(event, traits, flags, difficulty) {
       const has = c.requiredTrait ? traits.includes(c.requiredTrait) : true;
       const locked = !!c.requiredTrait && !has;
       let kind = "plain";
-      let badge = "";
-      let hasBadge = true;
+      let badge = "✓  SAFE";
       if (locked) {
         kind = "locked";
         badge = "🔒  REQUIRES " + (c.reqLabel || c.requiredTrait);
@@ -142,9 +153,7 @@ export function classifyChoices(event, traits, flags, difficulty) {
       } else if (c.check) {
         kind = "check";
         badge = "⚄  " + c.check.label + " CHECK · NEED " + (c.check.needed + m.need);
-      } else {
-        hasBadge = false;
       }
-      return { choice: c, kind, badge, hasBadge, locked };
+      return { choice: c, kind, badge, hasBadge: true, locked };
     });
 }

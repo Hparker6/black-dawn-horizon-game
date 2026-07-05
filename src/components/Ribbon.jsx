@@ -3,6 +3,16 @@ import * as t from "../styles/tokens.js";
 function navStyle(active) {
   return {
     flex: 1,
+    // Flex items default to min-width:auto, which refuses to shrink below
+    // the text's own intrinsic width — with "ACHIEVEMENTS" letter-spaced at
+    // 4 equal-flex tabs, that forced the whole ribbon wider than a 375px
+    // viewport (a real horizontal-scroll bug, not just a visual clip).
+    // minWidth:0 lets flex-shrink actually apply; the ellipsis is the
+    // graceful fallback if a tab still can't fit its full label.
+    minWidth: 0,
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
     cursor: "pointer",
     fontFamily: t.fontBody,
     fontSize: "12px",

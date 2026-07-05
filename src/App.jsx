@@ -5,9 +5,10 @@ import { EVENTS } from "./data/events.js";
 import { diff } from "./engine/difficulty.js";
 import { shuffleFour, applyCardPick, contributorsForStat } from "./engine/draft.js";
 import { rollD10, resolveCheck, applyResult, pickNextEvent } from "./engine/events.js";
-import { isSignificantSetback } from "./engine/pacing.js";
+import { isSignificantSetback, routeFromFlags } from "./engine/pacing.js";
 import { tier, unlockAchievements } from "./engine/scoring.js";
 import { ENDINGS, SECRET_ENDINGS, endingLabel } from "./data/endings.js";
+import { INTRO_SCREENS } from "./data/intro.js";
 import { shareRun, SHARE_LABEL_DEFAULT, SHARE_LABEL_SHARED, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
 import { trackEvent } from "./engine/analytics.js";
 import { loadSave, writeSave } from "./engine/save.js";
@@ -20,6 +21,7 @@ import ProgressTrail from "./components/ProgressTrail.jsx";
 import DestinationEta from "./components/DestinationEta.jsx";
 import DangerAtmosphere from "./components/DangerAtmosphere.jsx";
 import Title from "./screens/Title.jsx";
+import Intro from "./screens/Intro.jsx";
 import Draft from "./screens/Draft.jsx";
 import Events from "./screens/Events.jsx";
 import Results from "./screens/Results.jsx";
@@ -51,12 +53,6 @@ const DICE_TOTAL_MS = REDUCE_MOTION ? 320 : 700;
 const MIN_RUN_EVENTS = 12;
 const MAX_RUN_EVENTS = 15;
 
-// How long the inline reaction (message/tag/day/condition) stays on screen
-// for an instant trait/plain choice before auto-advancing. Long enough to
-// read a short line, short enough that it never feels like a second click
-// is owed.
-const REACTION_MS = 1300;
-
 function initialState() {
   return {
     tab: "survival",
@@ -65,6 +61,11 @@ function initialState() {
     played: 0,
     ach: [],
     endingsFound: [],
+    // Whether this browser has ever finished/skipped the intro before (see
+    // engine/save.js) — read at BEGIN to decide whether onPlay lands on the
+    // first atmosphere screen or skips straight to the route choice.
+    seenIntro: false,
+    introStep: 0,
     draftRound: 0,
     draftPhase: "idle",
     draftCards: [],
@@ -116,7 +117,7 @@ export default function App() {
 
   useEffect(() => {
     const save = loadSave();
-    setState((prev) => ({ ...prev, best: save.best, played: save.played, ach: save.ach, endingsFound: save.endings }));
+    setState((prev) => ({ ...prev, best: save.best, played: save.played, ach: save.ach, endingsFound: save.endings, seenIntro: save.seenIntro }));
   }, []);
 
   // Catches the "just closed the tab" quit — the one onExitToTitle can't
@@ -130,7 +131,7 @@ export default function App() {
     const handlePageHide = () => {
       const cur = stateRef.current;
       const onEventScreen = cur.screen === "event";
-      if (cur.screen !== "spin" && !onEventScreen) return;
+      if (cur.screen !== "spin" && cur.screen !== "intro" && !onEventScreen) return;
       trackEvent("player_quit", {
         screen: cur.screen,
         event_id: onEventScreen ? (cur.runEvents[cur.eventIndex] || {}).id || null : null,
@@ -149,14 +150,21 @@ export default function App() {
   const onTabAch = () => setState((prev) => ({ ...prev, tab: "achievements" }));
   const onTabEndings = () => setState((prev) => ({ ...prev, tab: "endings" }));
 
-  // ---------- draft flow ----------
+  // ---------- intro + draft flow ----------
+  // Lands on the first atmosphere screen for a first-time browser, or
+  // straight on the route choice (introStep === INTRO_SCREENS.length) for
+  // one that's already seen it — the choice itself is never skipped, only
+  // the lore leading up to it. flags reset here (before the route choice
+  // even runs) so the chosen route is the only flag present when the run
+  // actually starts.
   const onPlay = () => {
     trackEvent("run_started", { difficulty: DIFFICULTY });
     const m = diff(DIFFICULTY);
     setState((prev) => ({
       ...prev,
       tab: "survival",
-      screen: "spin",
+      screen: "intro",
+      introStep: prev.seenIntro ? INTRO_SCREENS.length : 0,
       draftRound: 0,
       draftPhase: "idle",
       draftCards: [],
@@ -171,12 +179,29 @@ export default function App() {
     }));
   };
 
+  const onIntroContinue = () => setState((prev) => ({ ...prev, introStep: prev.introStep + 1 }));
+
+  const onSkipIntro = () => setState((prev) => ({ ...prev, introStep: INTRO_SCREENS.length }));
+
+  // Ends the intro: the chosen route becomes a normal run flag (read by
+  // engine/pacing.js's routeFromFlags wherever pickNextEvent/applyResult
+  // already read flags — no other state here needs to know about routes at
+  // all) and seenIntro is persisted immediately, not deferred to run end,
+  // so quitting mid-run still counts as "has seen it" for next time.
+  const onChooseRoute = (routeFlag) => {
+    trackEvent("route_chosen", { route: routeFlag });
+    if (!state.seenIntro) {
+      writeSave({ best: state.best, played: state.played, ach: state.ach, endings: state.endingsFound, seenIntro: true });
+    }
+    setState((prev) => ({ ...prev, seenIntro: true, flags: [...prev.flags, routeFlag], screen: "spin" }));
+  };
+
   // Abandons the in-progress run (no localStorage write, no achievement/best
   // update — that only happens via finish()) and returns to the title screen.
   const onExitToTitle = () => {
     clearInterval(diceTimerRef.current);
     const onEventScreen = state.screen === "event";
-    if (state.screen === "spin" || onEventScreen) {
+    if (state.screen === "spin" || state.screen === "intro" || onEventScreen) {
       trackEvent("player_quit", {
         screen: state.screen,
         event_id: onEventScreen ? (state.runEvents[state.eventIndex] || {}).id || null : null,
@@ -231,7 +256,10 @@ export default function App() {
         return;
       }
       const runEventsTarget = MIN_RUN_EVENTS + Math.floor(Math.random() * (MAX_RUN_EVENTS - MIN_RUN_EVENTS + 1));
-      const firstEvent = pickNextEvent({ allEvents: EVENTS, usedIds: [], flags: [], remainingSlots: runEventsTarget, runEventsTarget, reliefBias: false });
+      // cur.flags (not []) — carries the intro's route choice (onChooseRoute,
+      // set before the draft even started) through to the very first
+      // pickNextEvent call, so route affects event weighting from event 1.
+      const firstEvent = pickNextEvent({ allEvents: EVENTS, usedIds: [], flags: cur.flags, remainingSlots: runEventsTarget, runEventsTarget, reliefBias: false });
       trackEvent("event_seen", {
         event_id: firstEvent.id,
         event_number: 1,
@@ -250,7 +278,9 @@ export default function App() {
         ...updated,
         day: 0,
         log: [],
-        flags: [],
+        // flags NOT reset here — it already holds only the route flag (set
+        // by onChooseRoute before the draft began; nothing in the draft
+        // itself touches flags), and needs to survive into the run.
         lastSetback: false,
         endingId: null,
         died: false,
@@ -269,13 +299,12 @@ export default function App() {
   };
 
   // ---------- events ----------
-  // Trait/plain choices resolve the instant they're picked — no second
-  // "acknowledge" tap. The result applies immediately (so the condition bar
-  // reacts in the same beat), an inline reaction shows in place of the
-  // choice list, and the event auto-advances after REACTION_MS. Dice checks
-  // still route through startDice()/DiceOverlay, which keeps its own
-  // deliberate CONTINUE tap — that pause is the dramatic beat, not dead
-  // weight.
+  // Trait/plain choices resolve the instant they're picked. The result
+  // applies immediately (so the condition bar reacts in the same beat) and
+  // an inline reaction shows in place of the choice list — same as a dice
+  // check's result card, it stays on screen until the player taps CONTINUE
+  // (or taps the reaction itself; see EventReaction.jsx) and never
+  // auto-dismisses, so nothing advances without a deliberate action.
   const chooseOption = (choice, locked) => {
     if (locked) return;
     const curEvent = state.runEvents[state.eventIndex] || {};
@@ -311,7 +340,6 @@ export default function App() {
       reacting: true,
       reaction: choice.result,
     }));
-    setTimeout(finishOrAdvance, REACTION_MS);
   };
 
   const startDice = (choice, curEvent) => {
@@ -362,10 +390,12 @@ export default function App() {
     }, DICE_TOTAL_MS);
   };
 
-  // Shared by the dice CONTINUE button and the trait/plain auto-advance
-  // timer. Reads stateRef (not the `state` closure) so it's correct even
-  // when fired from a setTimeout scheduled several renders ago. Picks the
-  // next event live, against the run's current flags — a callback event
+  // Shared by DiceOverlay's CONTINUE button and EventReaction's CONTINUE tap
+  // (both wired to this same `onContinue`) — both are deliberate player
+  // actions, nothing here ever fires on a timer. Reads stateRef (not the
+  // `state` closure) so it's correct even when called from a dice
+  // resolution scheduled several renders ago. Picks the next event live,
+  // against the run's current flags — a callback event
   // that just became eligible (because the choice that resolved a moment
   // ago set its flag) is simply one of the options pickNextEvent can now
   // draw, no separate "unlock" step required. `cur.lastSetback` (set by
@@ -428,6 +458,11 @@ export default function App() {
     // dimension registered before they're even selectable. `ending` sends
     // the display label (endingLabel()) since that's what's actually
     // readable in a GA4 report; `ending_id` carries the stable id.
+    // route: which intro choice shaped this run (or null pre-intro/legacy
+    // saves) — carried on all three so the dashboard can slice days/ending
+    // by route and actually see whether highway vs backroads diverge,
+    // instead of every run converging on the same average.
+    const route = routeFromFlags(snapshot.flags);
     trackEvent("run_finished", {
       days_survived: snapshot.day,
       ending: endingLabel(snapshot.endingId) || (snapshot.died ? "Died" : "Reached the Coast"),
@@ -435,15 +470,17 @@ export default function App() {
       tier: tier({ died: snapshot.died, day: snapshot.day }),
       died: snapshot.died,
       difficulty: DIFFICULTY,
+      route,
       is_new_best: snapshot.day > snapshot.best,
       new_achievements: newAch,
       new_ending: newEnding,
     });
-    trackEvent("days_survived", { days: snapshot.day, died: snapshot.died });
+    trackEvent("days_survived", { days: snapshot.day, died: snapshot.died, route });
     trackEvent("ending_reached", {
       ending_id: snapshot.endingId || (snapshot.died ? "death_unnamed" : "unknown"),
       ending: endingLabel(snapshot.endingId) || (snapshot.died ? "Died" : "Reached the Coast"),
       died: snapshot.died,
+      route,
     });
     writeSave({ best, played, ach, endings: endingsFound });
     setState((prev) => ({ ...prev, screen: "results", played, best, ach, newAch, endingsFound, newEnding, showDice: false, dice: null, reacting: false, reaction: null }));
@@ -479,7 +516,7 @@ export default function App() {
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "center",
-        padding: "20px 12px 40px",
+        padding: "14px 10px 22px",
         background: t.bgGradient,
       }}
     >
@@ -495,13 +532,21 @@ export default function App() {
         }}
       />
 
-      <div style={{ position: "relative", width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", gap: "10px" }}>
+      {/* Wide cap (not full-bleed) — the panel should dominate a desktop
+          viewport instead of floating in a mostly-empty room, but an
+          untamed max-width would stretch it absurdly on ultra-wide
+          monitors. 1500px comfortably fills 1280-1920px viewports while
+          still reading as a framed object, not a full-bleed page. */}
+      <div style={{ position: "relative", width: "100%", maxWidth: "1500px", display: "flex", flexDirection: "column", gap: "10px" }}>
         <Ribbon tab={state.tab} onTabSurvival={onTabSurvival} onTabLeader={onTabLeader} onTabAch={onTabAch} onTabEndings={onTabEndings} onExitToTitle={onExitToTitle} />
 
         <DangerAtmosphere hp={state.hp} hpMax={state.hpMax} reduceMotion={REDUCE_MOTION}>
           {state.tab === "survival" && (
             <>
               {state.screen === "title" && <Title best={state.best} played={state.played} onPlay={onPlay} />}
+              {state.screen === "intro" && (
+                <Intro step={state.introStep} onContinue={onIntroContinue} onSkip={onSkipIntro} onChooseRoute={onChooseRoute} />
+              )}
               {state.screen === "spin" && (
                 <Draft
                   round={state.draftRound}
@@ -519,22 +564,48 @@ export default function App() {
                 />
               )}
               {state.screen === "event" && (
-                // Ruled-paper texture spans the full wide panel — a short entry
-                // still reads as "journal page with room to breathe," not dead
-                // space — while the reading column itself stays narrow and
-                // centered so line lengths stay comfortable regardless of frame
-                // width. The margin rule is the same faint red as classic ruled
-                // paper's left margin line.
+                // Ruled-paper texture spans the full wide panel (gameplayRuleBg
+                // — a touch more present than Results' journalRuleBg, since a
+                // terse entry leaves more open space to read as "page" rather
+                // than "void") — while the reading column itself stays narrow
+                // and centered so line lengths stay comfortable regardless of
+                // frame width. Margin rules on both sides (same faint red as
+                // classic ruled paper's margin line) bound the column like a
+                // bound page, rather than leaving it looking like text
+                // stranded in the middle of a wider empty field. `position:
+                // relative` gives the field-note scrap (wide viewports only —
+                // see .bdh-margin-note in index.css) something to anchor to
+                // in the gutter beside the column.
                 <div
                   style={{
+                    position: "relative",
                     display: "flex",
                     flexDirection: "column",
                     flex: 1,
                     minHeight: 0,
-                    backgroundImage: t.journalRuleBg,
+                    backgroundImage: t.gameplayRuleBg,
                     backgroundSize: t.journalRuleSize,
                   }}
                 >
+                  {!currentEvent.final && currentEvent.type && (
+                    <div className="bdh-margin-note" style={{ position: "absolute", left: "14px", top: "84px" }}>
+                      <div
+                        style={{
+                          transform: "rotate(-2deg)",
+                          border: `1px dashed ${t.borderDashed}`,
+                          borderRadius: "2px",
+                          padding: "8px 10px",
+                          background: "rgba(244,239,228,.55)",
+                          maxWidth: "104px",
+                        }}
+                      >
+                        <div style={{ fontSize: "8px", letterSpacing: "1.5px", color: t.muted }}>FIELD NOTE</div>
+                        <div style={{ fontSize: "12px", color: t.ink, marginTop: "3px", fontFamily: t.fontDisplay, letterSpacing: ".5px" }}>
+                          {currentEvent.type.toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div
                     style={{
                       maxWidth: t.readingColumnWidth,
@@ -545,6 +616,7 @@ export default function App() {
                       flex: 1,
                       minHeight: 0,
                       borderLeft: "1px solid rgba(198,40,40,.14)",
+                      borderRight: "1px solid rgba(198,40,40,.14)",
                     }}
                   >
                     {/* Persistent header: stays visible above the dice overlay (which only
@@ -555,20 +627,29 @@ export default function App() {
                         <div style={{ fontSize: "12px", letterSpacing: "2px", color: t.muted }}>
                           DAY <span style={{ color: t.ink, fontSize: "16px" }}>{state.day}</span>
                         </div>
-                        <ConditionBar hp={state.hp} hpMax={state.hpMax} />
+                        <ConditionBar hp={state.hp} hpMax={state.hpMax} reduceMotion={REDUCE_MOTION} />
                       </div>
                       <DestinationEta day={state.day} eventIndex={state.eventIndex} runEventsTarget={state.runEventsTarget} />
                       <ProgressTrail current={state.eventIndex} total={state.runEventsTarget + 1} />
                     </div>
                     <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                      <Events event={currentEvent} traits={state.traits} flags={state.flags} difficulty={DIFFICULTY} reacting={state.reacting} reaction={state.reaction} onChoose={chooseOption} />
+                      <Events
+                        event={currentEvent}
+                        traits={state.traits}
+                        flags={state.flags}
+                        difficulty={DIFFICULTY}
+                        reacting={state.reacting}
+                        reaction={state.reaction}
+                        onChoose={chooseOption}
+                        onReactionContinue={onContinue}
+                      />
                       <DiceOverlay show={state.showDice} dice={state.dice} onContinue={onContinue} />
                     </div>
                   </div>
                   {/* Outside the reading column on purpose — full panel width,
                       docked to the bottom, so it never narrows the story text
                       or competes with it. Collapsed by default either way. */}
-                  <LoadoutStrip loadout={state.loadout} />
+                  <LoadoutStrip loadout={state.loadout} route={routeFromFlags(state.flags)} />
                 </div>
               )}
               {state.screen === "results" && (

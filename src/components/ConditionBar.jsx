@@ -3,13 +3,47 @@ import * as t from "../styles/tokens.js";
 
 const FLASH_MS = 900;
 
-// Pips react the instant `hp` changes: a hit flashes red + shakes + a "-N"
-// floats up, a heal pulses green + rises + a "+N" floats up. Detecting the
-// change internally (rather than taking an external trigger prop) means it
-// fires correctly whether hp changed via an instant trait/plain result or a
-// dice check resolving — same beat the outcome appears, no wiring needed at
-// each call site.
-export default function ConditionBar({ hp, hpMax }) {
+// Same thresholds the old pip meter used to color itself (hp<=2 = red,
+// hp<=half = gold, else green) — kept identical so nothing about when
+// "hurt" starts actually changes, just how it's communicated. hp<=0 gets
+// its own word since a run essentially never lingers there (screen moves
+// to Results), but the word should still be right if it's ever glimpsed
+// mid-transition.
+function conditionWord(hp, hpMax) {
+  if (hp <= 0) return "FADING";
+  if (hp <= 2) return "FAILING";
+  if (hp <= Math.ceil(hpMax / 2)) return "HURT";
+  return "STEADY";
+}
+
+// Typographic degradation instead of a color-coded meter — a health BAR
+// reads like a game HUD; a word written in a shakier, fainter, redder hand
+// as things get worse reads like a journal. `hp`/`hpMax` stay numeric in
+// state for all real logic (DangerAtmosphere, achievements, etc.) — this
+// component is the only place that ever turns it into text.
+function wordStyle(word, reduceMotion) {
+  const base = { fontFamily: t.fontBody, letterSpacing: "2px", fontSize: "14px", transition: "color .6s ease" };
+  if (word === "STEADY") return { ...base, color: t.ink };
+  if (word === "HURT") return { ...base, color: t.goldDark };
+  if (word === "FAILING")
+    return {
+      ...base,
+      color: t.blood,
+      letterSpacing: "2.5px",
+      animation: reduceMotion ? "none" : "bdhWordShake 2.4s ease-in-out infinite",
+    };
+  // FADING
+  return {
+    ...base,
+    color: t.blood,
+    letterSpacing: "3px",
+    opacity: 0.82,
+    textShadow: "0 0 6px rgba(198,40,40,.5)",
+    animation: reduceMotion ? "none" : "bdhWordShake 1.1s ease-in-out infinite",
+  };
+}
+
+export default function ConditionBar({ hp, hpMax, reduceMotion }) {
   const prevHpRef = useRef(hp);
   const [flash, setFlash] = useState(null);
 
@@ -23,12 +57,7 @@ export default function ConditionBar({ hp, hpMax }) {
     return () => clearTimeout(timer);
   }, [hp]);
 
-  const pips = [];
-  for (let i = 0; i < hpMax; i++) {
-    const on = i < hp;
-    const color = hp <= 2 ? t.blood : hp <= Math.ceil(hpMax / 2) ? t.gold : t.green;
-    pips.push({ on, color });
-  }
+  const word = conditionWord(hp, hpMax);
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -36,28 +65,16 @@ export default function ConditionBar({ hp, hpMax }) {
       <span style={{ position: "relative", display: "inline-flex" }}>
         <span
           style={{
-            display: "flex",
-            gap: "3px",
-            padding: "2px 3px",
-            margin: "-2px -3px",
+            display: "inline-block",
+            padding: "1px 5px",
+            margin: "-1px -5px",
             borderRadius: "3px",
             background: flash ? (flash.type === "damage" ? "rgba(198,40,40,.3)" : "rgba(45,90,61,.3)") : "transparent",
             animation: flash ? (flash.type === "damage" ? "hpShake .4s ease" : "hpRise .45s ease") : "none",
             transition: "background .6s ease",
           }}
         >
-          {pips.map((pip, i) => (
-            <span
-              key={i}
-              style={{
-                width: "7px",
-                height: "14px",
-                borderRadius: "1px",
-                background: pip.on ? pip.color : "transparent",
-                border: "1px solid " + (pip.on ? "transparent" : t.borderSubtle),
-              }}
-            />
-          ))}
+          <span style={wordStyle(word, reduceMotion)}>{word}</span>
         </span>
         {flash && (
           <span
@@ -65,7 +82,7 @@ export default function ConditionBar({ hp, hpMax }) {
             style={{
               position: "absolute",
               right: "-4px",
-              top: "-4px",
+              top: "-14px",
               fontSize: "12px",
               fontWeight: "bold",
               color: flash.type === "damage" ? t.blood : t.green,

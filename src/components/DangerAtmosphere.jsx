@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import * as t from "../styles/tokens.js";
 
 // Ratio of hpMax below which danger cues start appearing — matches
-// ConditionBar's gold pip threshold, so the atmosphere and the condition
-// bar agree on what counts as "hurt". Cues then scale from 0 (right at
+// ConditionBar's own HURT threshold, so the atmosphere and the condition
+// word agree on what counts as "hurt". Cues then scale from 0 (right at
 // that threshold) to 1 (hp at 0).
 const HURT_RATIO = 0.5;
 const HEARTBEAT_CALM_MS = 2200;
@@ -49,11 +49,11 @@ export default function DangerAtmosphere({ hp, hpMax, reduceMotion, children }) 
         style={{
           position: "relative",
           width: "100%",
-          minHeight: "min(80vh,760px)",
+          minHeight: "min(88vh,940px)",
           background: t.paper,
           color: t.ink,
           borderRadius: "2px",
-          boxShadow: "0 1px 0 #fbf7ee inset, 0 30px 60px -20px rgba(0,0,0,.7)",
+          boxShadow: `0 1px 0 #fbf7ee inset, ${t.panelFrameGlow}`,
           backgroundImage: t.coffeeRingBg,
           overflow: "hidden",
           display: "flex",

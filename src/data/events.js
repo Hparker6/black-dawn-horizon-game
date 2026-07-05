@@ -10,7 +10,7 @@
 // the pacing draw entirely (see pickNextEvent in engine/events.js).
 export const EVENTS = [
   { id:'event_pharmacy', title:'The Pharmacy', type:'discovery',
-    body:['A pharmacy sits untouched across the street.','The front doors are chained shut. Behind the glass, shelves of medicine catch the grey light.'],
+    body:['A pharmacy sits untouched, doors chained shut.','Medicine lines the shelves beyond the glass.'],
     choices:[
       { text:'Pry the chains loose and clear the shelves', requiredTrait:'PryOpen', reqLabel:'Pry Open',
         result:{days:3,health:2,msg:'The chain gives with a crack. You fill your bag with bottles and gauze before the light fails.',tag:'MEDICINE SECURED'} },
@@ -21,7 +21,7 @@ export const EVENTS = [
         result:{days:2,msg:'You keep walking. Your stomach and your wounds will remember this street.',tag:'PASSED BY'} },
     ]},
   { id:'event_fever', title:'The Fever', type:'danger',
-    body:['By the third night your cut has gone hot and yellow.',"Sweat soaks the map in your pocket. Your hands won't stop shaking."],
+    body:['By the third night, your cut has gone hot and yellow.',"Your hands won't stop shaking."],
     choices:[
       { text:'Treat the wound properly', requiredTrait:'Heal', reqLabel:'Treat Wounds',
         result:{days:4,health:3,msg:'You clean it, pack it, bind it. By morning the fever breaks and the world stops swimming.',tag:'RECOVERED'} },
@@ -32,7 +32,7 @@ export const EVENTS = [
         fail:{days:2,health:-4,msg:"The fever wins the week. You lose days you can't count and blood you couldn't spare."} },
     ]},
   { id:'event_road_out', title:'The Road Out', type:'climax',
-    body:['The only way north runs through a stalled column of cars.','Shapes move between them — slow, then not slow. A dozen at least. They have seen you.'],
+    body:['The only way north cuts through a stalled column of cars.','A dozen shapes move between them — slow, then not. They have seen you.'],
     choices:[
       { text:'Drop them from a distance', requiredTrait:'Ranged', reqLabel:'Ranged',
         result:{days:3,msg:'Six shots, six down. The rest scatter. You walk through the quiet you bought.',tag:'−6 ROUNDS'} },
@@ -44,7 +44,7 @@ export const EVENTS = [
         fail:{days:5,health:-2,msg:'The detour costs you days and a bad fall — but you live to be lost another morning.'} },
     ]},
   { id:'event_flooded_underpass', title:'The Flooded Underpass', type:'discovery',
-    body:['Black water fills the underpass to the waist.','It is the fastest way through — and it stinks of rot and runoff. Your canteen is bone dry.'],
+    body:['Black water fills the underpass, waist-deep.','Your canteen is bone dry, and this is the fastest way through.'],
     choices:[
       { text:'Refill and purify the water here', requiredTrait:'Purify', reqLabel:'Purify Water',
         result:{days:3,health:1,msg:'You draw the foul water and let the filter do its work. Clean, cold, life in a bottle.',tag:'WATER SECURED'} },
@@ -55,7 +55,7 @@ export const EVENTS = [
         result:{days:5,msg:'You wait two days for weather that comes late. Water, finally — but the calendar bled.',tag:'DELAYED'} },
     ]},
   { id:'event_fire_ahead', title:'The Fire Ahead', type:'danger',
-    body:['A fire flickers under the overpass. Three figures, one rifle, a pot of something that actually smells like food.','They have gone quiet. Watching you decide.'],
+    body:['A fire flickers under the overpass — three figures, one rifle, food cooking.',"They've gone quiet, watching you decide."],
     choices:[
       { text:'Read them before you speak', requiredTrait:'Scout', reqLabel:'Scout Ahead',
         result:{days:3,health:1,msg:"You'd already counted the rifle's empty magazine. You approach easy, eat well, and leave richer.",tag:'TRADED UP'} },
@@ -67,7 +67,7 @@ export const EVENTS = [
         fail:{days:2,health:-2,msg:'A can rolls. A shot cracks the dark. You run, and keep running, and pay for the noise.'} },
     ]},
   { id:'event_dead_highway', title:'The Dead Highway', type:'discovery',
-    body:['The overpass has collapsed across the interstate — a mountain of concrete and rebar.','Somewhere past it is the coast. Somewhere past it, they say, there are still boats.'],
+    body:['The overpass has collapsed — a mountain of concrete and rebar blocking the interstate.','Past it, they say, the coast still has boats.'],
     choices:[
       { text:'Route around it from memory of the map', requiredTrait:'Navigate', reqLabel:'Navigate',
         result:{days:3,msg:"You trace the county's old service roads in your head and thread the wreck without breaking stride.",tag:'FAST PATH'} },
@@ -78,7 +78,7 @@ export const EVENTS = [
         fail:{days:3,health:-4,msg:'Halfway up the rebar shifts. You fall hard and crawl the day out, the coast still beyond reach.'} },
     ]},
   { id:'event_long_night', title:'The Long Night', type:'climax',
-    body:['The temperature drops with the sun. No shelter, no walls — just the open coast road and a wind that cuts.','You will not last the night still.'],
+    body:['The temperature drops with the sun — no shelter, no walls, just open road and a cutting wind.',"You won't last the night out here."],
     choices:[
       { text:'Build a fire and hold the dark back', requiredTrait:'Fire', reqLabel:'Make Fire',
         result:{days:3,health:2,msg:'The Zippo catches on the first strike. You sit in a small gold circle of warmth and, for one night, you are safe.',tag:'WARM'} },
@@ -90,7 +90,7 @@ export const EVENTS = [
         fail:{days:2,health:-2,msg:'The car is a metal icebox. You survive it, barely, and pay in warmth you did not have to give.'} },
     ]},
   { id:'event_feral_pack', title:'The Feral Pack', type:'danger',
-    body:['A pack of dogs breaks from the tree line, low and fast.','They have your scent. They are not slowing down.'],
+    body:['A pack of dogs breaks from the tree line, low and fast.',"They have your scent, and they're not slowing."],
     choices:[
       { text:'Drop the lead dog from range', requiredTrait:'Ranged', reqLabel:'Ranged',
         result:{days:2,msg:"One shot. The pack scatters at the sound and doesn't come back.",tag:'PACK BROKEN'} },
@@ -101,7 +101,7 @@ export const EVENTS = [
         result:{days:1,msg:'You haul yourself onto a rusted truck bed and wait them out.',tag:'WAITED OUT'} },
     ]},
   { id:'event_broken_ice', title:'The Broken Ice', type:'discovery',
-    body:['The reservoir is frozen edge to edge, and the far shore means two fewer days on foot.',"Somewhere under the white there's a road that used to be solid."],
+    body:['The reservoir is frozen edge to edge — the far shore saves two days on foot.','Somewhere under the white, a road used to hold.'],
     choices:[
       { text:'Follow the old boat channel markers', requiredTrait:'Navigate', reqLabel:'Navigate',
         result:{days:1,health:1,msg:'You remember the channel runs deeper — the ice there is thick enough. You cross without a crack.',tag:'FAST CROSSING'} },
@@ -112,7 +112,7 @@ export const EVENTS = [
         result:{days:4,msg:'You add two days to the map rather than trust the ice.',tag:'LONG WAY'} },
     ]},
   { id:'event_gas_main', title:'The Gas Main', type:'discovery',
-    body:['A ruptured gas line hisses behind a locked utility door.',"Whatever's stored past it hasn't burned yet — but the smell says that's luck, not safety."],
+    body:['A ruptured gas line hisses behind a locked door.',"Whatever's inside hasn't burned yet. That's luck, not safety."],
     choices:[
       { text:'Force the shutoff valve casing', requiredTrait:'PryOpen', reqLabel:'Pry Open',
         result:{days:2,health:1,msg:'You crack the casing and choke the line by hand. The hiss dies. So does the risk.',tag:'LEAK STOPPED'} },
@@ -123,7 +123,7 @@ export const EVENTS = [
         result:{days:1,msg:'Some doors stay shut for a reason.',tag:'LEFT SEALED'} },
     ]},
   { id:'event_riverbank_ambush', title:'The Riverbank Ambush', type:'danger',
-    body:['Two figures wait at the only river crossing for miles, half-hidden in the reeds.',"They haven't seen you yet."],
+    body:['Two figures wait at the only crossing for miles, half-hidden in the reeds.',"They haven't seen you. Yet."],
     choices:[
       { text:'Read their positions before you move', requiredTrait:'Scout', reqLabel:'Scout Ahead',
         result:{days:2,msg:'You clock both of them from the ridge and cross a half-mile upstream, unseen.',tag:'AVOIDED'} },
@@ -134,7 +134,7 @@ export const EVENTS = [
         result:{days:3,msg:'You lose the daylight but not the blood. Patience, for once, costs only time.',tag:'WAITED'} },
     ]},
   { id:'event_sinking_overpass', title:'The Sinking Overpass', type:'climax',
-    body:['Half the overpass has already dropped into the river below.','The remaining span groans with every gust — and it\'s the only way across before dark.'],
+    body:['Half the overpass has already dropped into the river.','The rest groans with every gust — the only way across before dark.'],
     choices:[
       { text:'Cross along the load-bearing line', requiredTrait:'Navigate', reqLabel:'Navigate',
         result:{days:2,msg:'You trace the one section still tied to bedrock and make it across without a wobble.',tag:'STEADY CROSSING'} },
@@ -145,7 +145,7 @@ export const EVENTS = [
         result:{days:4,msg:'You lose the better part of a week finding solid ground instead.',tag:'DETOUR'} },
     ]},
   { id:'event_quarantine_ward', title:'The Quarantine Ward', type:'climax',
-    body:["A clinic's quarantine ward is still sealed, biohazard tape peeling off the doors.",'Something inside is coughing. Something else has stopped.'],
+    body:["A clinic's quarantine ward is sealed, biohazard tape peeling.",'Something inside is coughing. Something else has stopped.'],
     choices:[
       { text:'Move through with proper precautions', requiredTrait:'Cure', reqLabel:'Cure Infection',
         result:{days:2,health:1,msg:"You know what not to touch. You clear the ward's usable stock without catching whatever's in the air.",tag:'CLEAN RUN'} },
@@ -156,7 +156,7 @@ export const EVENTS = [
         result:{days:1,msg:'Some wards stay quarantined for a reason. You leave it be.',tag:'LEFT SEALED'} },
     ]},
   { id:'event_last_transmission', title:"The Last Transmission", type:'quiet',
-    body:["A dead man's radio pack still cycles the same distress loop, batteries somehow holding.",'His notebook is open beside him, half a frequency written down.'],
+    body:["A dead man's radio loops the same distress call, batteries still holding.",'His notebook lies open — half a frequency, written down.'],
     choices:[
       { text:'Finish decoding his last transmission', requiredTrait:'Signal', reqLabel:'Call Rescue',
         result:{days:2,health:1,msg:'You know the protocol. The rest of the frequency clicks into place — a working relay, still listening.',tag:'RELAY FOUND'} },
@@ -167,7 +167,7 @@ export const EVENTS = [
         result:{days:1,msg:'You strip the pack for parts and leave the rest to whoever finds him next.',tag:'STRIPPED'} },
     ]},
   { id:'event_field_medics_cache', title:"The Field Medic's Cache", type:'quiet',
-    body:["A medic's rucksack hangs from a shattered ambulance door, untouched.","Whoever left it in this state didn't leave on their own terms."],
+    body:["A medic's rucksack hangs from a shattered ambulance door.","Whoever left it didn't leave on their own terms."],
     choices:[
       { text:"Sort the cache like you know what you're doing", requiredTrait:'Heal', reqLabel:'Treat Wounds',
         result:{days:1,health:3,msg:"You know exactly what's worth the weight. The rest you leave for whoever's luckier than the medic was.",tag:'KIT SECURED'} },
@@ -178,7 +178,7 @@ export const EVENTS = [
         result:{days:1,msg:"You'll sort it later, if later comes.",tag:'GRABBED'} },
     ]},
   { id:'event_furnace_room', title:'The Furnace Room', type:'discovery',
-    body:['A basement furnace room sits cold and sealed behind a rusted grate.','Whatever\'s stored past it has been kept warm — and hidden — for a long time.'],
+    body:['A basement furnace room sits cold behind a rusted grate.','Something back there has been kept warm, and hidden, a long time.'],
     choices:[
       { text:'Relight the furnace to see by', requiredTrait:'Fire', reqLabel:'Make Fire',
         result:{days:2,health:1,msg:'The old furnace catches on the second try. In the light you find a stash someone meant to come back for.',tag:'STASH FOUND'} },
@@ -189,7 +189,7 @@ export const EVENTS = [
         result:{days:1,msg:'You leave the grate shut and the basement dark.',tag:'SKIPPED'} },
     ]},
   { id:'event_overturned_armored_truck', title:'The Overturned Armored Truck', type:'discovery',
-    body:['An armored cash truck lies on its side across two lanes, back doors sealed tight.',"Nobody's touched it. That alone is worth noting."],
+    body:['An armored truck lies on its side, back doors sealed tight.',"Nobody's touched it. That's worth noting."],
     choices:[
       { text:'Force the rear doors', requiredTrait:'PryOpen', reqLabel:'Pry Open',
         result:{days:2,health:-1,msg:"It takes everything you've got, but the doors give. Whatever's inside was worth guarding.",tag:'DOORS FORCED'} },
@@ -200,7 +200,7 @@ export const EVENTS = [
         result:{days:1,msg:'Whatever\'s inside stays inside.',tag:'PASSED BY'} },
     ]},
   { id:'event_treatment_annex', title:'The Treatment Annex', type:'discovery',
-    body:['A water treatment annex still hums on backup power, tanks half-full.','The readout on the filtration panel is red across the board.'],
+    body:['A water treatment annex hums on backup power, tanks half-full.','The filtration readout is red across the board.'],
     choices:[
       { text:'Run the system through a manual cycle', requiredTrait:'Purify', reqLabel:'Purify Water',
         result:{days:2,health:2,msg:'You know the manual override. Clean water, more than you can carry, for the first time in weeks.',tag:'CLEAN WATER'} },
@@ -211,7 +211,7 @@ export const EVENTS = [
         result:{days:1,msg:'You bypass the annex and keep your canteen dry.',tag:'SKIPPED'} },
     ]},
   { id:'event_nursery_window', title:'The Nursery Window', type:'quiet',
-    body:["A hand-lettered sign in a daycare window reads 'THREE KIDS, NO FOOD, PLEASE.'",'The building looks otherwise empty. It probably isn\'t.'],
+    body:["A hand-lettered sign in a daycare window reads 'THREE KIDS, NO FOOD, PLEASE.'",'It looks empty. It probably isn\'t.'],
     choices:[
       { text:'Leave what food you can spare',
         result:{days:1,health:-1,msg:'You leave half your rations on the sill and walk away without knocking. You never find out if it mattered.',tag:'GAVE WHAT YOU HAD',setFlags:['helped_nursery_kids']} },
@@ -222,7 +222,7 @@ export const EVENTS = [
         result:{days:1,msg:'The sign stays in the window behind you.',tag:'KEPT WALKING',setFlags:['ignored_nursery_kids']} },
     ]},
   { id:'event_toll_bridge', title:'The Toll Bridge', type:'danger',
-    body:['Three survivors have chained the only bridge crossing and want a toll to let you through.',"They're armed. They're also thin — this isn't going well for them either."],
+    body:['Three survivors have chained the bridge and want a toll.',"They're armed, and thin. This isn't going well for them either."],
     choices:[
       { text:"Pay what they're asking",
         result:{days:1,health:-1,msg:'You hand over a share of your supplies. They lift the chain without a word.',tag:'PAID TOLL',setFlags:['paid_toll']} },
@@ -233,7 +233,7 @@ export const EVENTS = [
         result:{days:3,msg:"You give up the bridge and the days it would've saved you.",tag:'REROUTED'} },
     ]},
   { id:'event_injured_stranger', title:'The Injured Stranger', type:'quiet',
-    body:['A man is propped against a mile marker, leg bent wrong, asking for anyone at all.','He has nothing to offer you but his name.'],
+    body:['A man is propped against a mile marker, leg bent wrong.','He has nothing to offer but his name.'],
     choices:[
       { text:'Set the leg properly', requiredTrait:'Heal', reqLabel:'Treat Wounds',
         result:{days:2,health:-1,msg:"You splint it right. He won't walk well for a month, but he'll walk. He gives you what little he's carrying, gratefully.",tag:'SET RIGHT'} },
@@ -243,7 +243,7 @@ export const EVENTS = [
         result:{days:1,msg:'His voice follows you for a while. Then it doesn\'t.',tag:'KEPT WALKING'} },
     ]},
   { id:'event_dead_mans_locker', title:"The Dead Man's Locker", type:'quiet',
-    body:['A storage locker still has a name taped to it and a combination scratched underneath.',"Whoever left the hint didn't come back for it."],
+    body:['A storage locker has a name taped to it, a combination scratched below.',"Whoever left the hint never came back."],
     choices:[
       { text:'Take everything of value',
         result:{days:1,health:1,msg:"You clear it out. It's someone's whole life in a metal box, and now it's supplies.",tag:'CLEARED OUT'} },
@@ -254,7 +254,7 @@ export const EVENTS = [
         result:{days:1,msg:'Not every locker needs opening.',tag:'LEFT SEALED'} },
     ]},
   { id:'event_rival_scavenger', title:'The Rival Scavenger', type:'danger',
-    body:['Another scavenger reaches the same collapsed pharmacy at the same moment you do.','Neither of you got here first. Both of you need what\'s inside.'],
+    body:['Another scavenger reaches the same pharmacy at the same moment.',"Neither got here first. Both need what's inside."],
     choices:[
       { text:'Split the haul evenly',
         result:{days:1,msg:'You divide what\'s left down the middle and go your separate ways. Nobody draws a weapon.',tag:'SPLIT EVEN',setFlags:['spared_scavenger']} },
@@ -265,7 +265,7 @@ export const EVENTS = [
         result:{days:2,msg:'It\'s not worth the fight. You leave them the whole pharmacy.',tag:'CONCEDED'} },
     ]},
   { id:'event_stampede', title:'The Stampede', type:'danger',
-    body:["A herd of spooked cattle, someone's failed livestock experiment, thunders down the highway median.","They don't care that you're in the way."],
+    body:['A spooked herd thunders down the highway median.',"They don't care that you're in the way."],
     choices:[
       { text:'Dive clear and let them pass', check:{stat:'survival',needed:7,label:'SURVIVAL'},
         success:{days:1,msg:"You hit the ditch a half-second before they'd have hit you. The ground shakes for a while after."},
@@ -277,7 +277,7 @@ export const EVENTS = [
         result:{days:1,msg:'You wait it out from the top of a stalled bus. The herd passes like weather.',tag:'WAITED OUT'} },
     ]},
   { id:'event_speaker_loop', title:'The Speaker Loop', type:'danger',
-    body:['A solar-powered speaker in a gutted electronics store still loops the same jingle, hour after hour.',"It's drawing a crowd. Not the kind you want."],
+    body:['A speaker in a gutted store loops the same jingle, hour after hour.',"It's drawing a crowd. Not the kind you want."],
     choices:[
       { text:'Find and kill the power source', check:{stat:'wits',needed:7,label:'WITS'},
         success:{days:1,msg:'You trace the wire to a cracked solar panel and rip it loose. Silence, finally.'},
@@ -289,7 +289,7 @@ export const EVENTS = [
         result:{days:2,msg:'You add half a day to your route rather than go anywhere near that jingle again.',tag:'AVOIDED'} },
     ]},
   { id:'event_derailment', title:'The Derailment', type:'danger',
-    body:['A freight train, still moving under nobody\'s control, derails a quarter mile ahead of you.','The wreck is still settling. So is the dust.'],
+    body:['A runaway freight train derails a quarter mile ahead.','The wreck is still settling. So is the dust.'],
     choices:[
       { text:'Get clear before the cars finish tipping', check:{stat:'survival',needed:8,label:'SURVIVAL'},
         success:{days:1,msg:"You're already moving when the last car goes over. Debris lands where you stood a second ago."},
@@ -301,7 +301,7 @@ export const EVENTS = [
         result:{days:1,msg:'You watch from a safe distance and let the dust settle without you in it.',tag:'KEPT CLEAR'} },
     ]},
   { id:'event_costume_party', title:'The Costume Party', type:'quiet',
-    body:["A dozen survivors in cracked Halloween masks are dancing around a bonfire like the world didn't end.",'It\'s either the safest place you\'ve seen in weeks, or the least.'],
+    body:["A dozen survivors in cracked masks dance around a bonfire, like the world didn't end.","Safest place you've seen in weeks, or the least."],
     choices:[
       { text:'Watch the tree line while they party', requiredTrait:'Ranged', reqLabel:'Ranged',
         result:{days:2,health:2,msg:'You cover their blind side from a distance and they notice. In return, you eat well and sleep warm.',tag:'EARNED TRUST'} },
@@ -318,7 +318,7 @@ export const EVENTS = [
   // and finds the triggering flag now satisfied. Each pair is mutually
   // exclusive via excludeFlags on the other branch's flag.
   { id:'event_bridge_toll_repaid', title:'The Bridge Toll, Repaid', type:'quiet', requiresFlags:['paid_toll'], excludeFlags:['robbed_toll'],
-    body:['The three from the toll bridge are camped just off the road — the ones you paid instead of fighting.','They wave you over before you can decide whether to avoid them.'],
+    body:['The three from the toll bridge are camped just off the road.','They wave you over before you can decide to avoid them.'],
     choices:[
       { text:'Sit by their fire a while',
         result:{days:2,health:2,msg:'They remember the toll you paid without a fight. You eat well and leave with a few rounds they can spare.',tag:'REPAID'} },
@@ -329,7 +329,7 @@ export const EVENTS = [
         result:{days:1,health:1,msg:'You take what they offer — dry socks, a half-full canteen — and nod your thanks.',tag:'KEPT MOVING'} },
     ]},
   { id:'event_bridge_toll_remembered', title:'The Bridge Toll, Remembered', type:'climax', requiresFlags:['robbed_toll'], excludeFlags:['paid_toll'],
-    body:['The survivors from the toll bridge block the road again — the ones you fought your way past.',"They've had time to plan for a rematch."],
+    body:['The toll bridge survivors block the road again.',"They've had time to plan a rematch."],
     choices:[
       { text:"Point to what you did at the nursery — you're not what they think", requiresFlags:['helped_nursery_kids'], flagLabel:'a reputation for mercy',
         result:{days:1,msg:'Word travels. One of them lowers their weapon first. The rest follow, uneasy but not fighting.',tag:'REPUTATION HELD'} },
@@ -340,7 +340,7 @@ export const EVENTS = [
         result:{days:1,health:-1,msg:"They're not interested in talking this time. You back away slowly, giving ground.",tag:'BACKED OFF'} },
     ]},
   { id:'event_scavengers_debt', title:"The Scavenger's Debt", type:'quiet', requiresFlags:['spared_scavenger'], excludeFlags:['robbed_scavenger'],
-    body:['The scavenger from the pharmacy split waves you down from across a parking lot.',"They remember you didn't have to share. You didn't have to, and you did."],
+    body:['The scavenger from the pharmacy split waves you down.',"You didn't have to share. You did anyway."],
     choices:[
       { text:'Hear them out',
         result:{days:1,health:2,msg:"They point you to a cache they found but couldn't carry alone. Fair's fair.",tag:'CACHE SHARED'} },
@@ -351,7 +351,7 @@ export const EVENTS = [
         result:{days:1,msg:"You don't need the favor spelled out. A nod is enough between people who split things evenly.",tag:'MOVED ON'} },
     ]},
   { id:'event_scavengers_grudge', title:"The Scavenger's Grudge", type:'climax', requiresFlags:['robbed_scavenger'], excludeFlags:['spared_scavenger'],
-    body:['The scavenger you pushed off the pharmacy find is back — and not alone this time.',"They've clearly been telling people about you."],
+    body:['The scavenger you pushed off the pharmacy find is back, not alone.',"They've been talking about you."],
     choices:[
       { text:"Point to what you did at the nursery — you're not a monster", requiresFlags:['helped_nursery_kids'], flagLabel:'a reputation for mercy',
         result:{days:1,health:-1,msg:"They hesitate. Whatever they heard about you, it doesn't fully match what they're hearing now. They let you pass, watching.",tag:'HESITATED'} },
@@ -362,7 +362,7 @@ export const EVENTS = [
         result:{days:1,msg:'You hand back more than you took, just to end it. They let you leave.',tag:'PAID BACK'} },
     ]},
   { id:'event_nursery_repaid', title:'The Nursery, Repaid', type:'quiet', requiresFlags:['helped_nursery_kids'], excludeFlags:['ignored_nursery_kids'],
-    body:['The daycare window is empty now, the sign gone.','A note is taped where it used to hang — and a bag of supplies waits underneath, addressed to no one in particular.'],
+    body:['The daycare window is empty now, the sign gone.','A note hangs in its place, and a bag of supplies waits below.'],
     choices:[
       { text:'Take it. They wanted you to have it.',
         result:{days:1,health:2,msg:'The bag holds more than they could afford to give. You carry it like it means something, because it does.',tag:'PAID FORWARD'} },
@@ -373,7 +373,7 @@ export const EVENTS = [
         result:{days:1,msg:"You leave the bag exactly where it sat. Someone else's turn.",tag:'LEFT IT'} },
     ]},
   { id:'event_locked_door_still_locked', title:'The Locked Door, Still Locked', type:'quiet', requiresFlags:['ignored_nursery_kids'], excludeFlags:['helped_nursery_kids'],
-    body:['You pass the daycare again without meaning to — the road just bends back this way.','The sign is still in the window. Nothing else has changed.'],
+    body:['You pass the daycare again — the road just bends back this way.',"The sign's still in the window. Nothing else has changed."],
     choices:[
       { text:'Knock this time',
         result:{days:1,health:-1,msg:'No one answers. No one was ever going to, not anymore. You should have known that before you knocked.',tag:'TOO LATE'} },
@@ -385,7 +385,7 @@ export const EVENTS = [
     ]},
 
   { id:'event_signal', title:'The Signal', final:true,
-    body:['From the bluff you see it: the coast guard station, lights still burning, a helicopter squatting on the pad.','But the beach between here and there is not empty. It never is.'],
+    body:['From the bluff: the coast guard station, lights burning, a helicopter on the pad.','The beach between here and there is never empty.'],
     choices:[
       { text:'Raise them on the radio and call in the pad', requiredTrait:'Signal', reqLabel:'Call Rescue',
         result:{days:2,msg:'You key the mic. A voice answers — real, human, alive. "Hold position. We see you. We are coming."',endingId:'military_rescue',win:true,tag:'RESCUE INBOUND'} },

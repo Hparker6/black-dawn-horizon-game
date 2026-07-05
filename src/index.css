@@ -316,6 +316,19 @@ body {
   box-shadow: 0 1px 0 #000 !important;
 }
 
+/* Field-note margin scrap (App.jsx's event screen): only shown once the
+   panel is wide enough to have real gutter space beside the reading
+   column — below that width the column fills the panel and there's
+   nowhere for it to sit without overlapping the story. */
+.bdh-margin-note {
+  display: none;
+}
+@media (min-width: 960px) {
+  .bdh-margin-note {
+    display: block;
+  }
+}
+
 /* Danger atmosphere (components/DangerAtmosphere.jsx): a slight shake of
    the whole journal panel the instant a hit lands while already hurt. Two
    identical keyframes alternated by the component so the animation reliably
@@ -332,6 +345,18 @@ body {
   20%, 80% { transform: translateX(-2px); }
   30%, 50%, 70% { transform: translateX(3px); }
   40%, 60% { transform: translateX(-3px); }
+}
+
+/* ConditionBar's FAILING/FADING status word — a continuous, small hand
+   tremor (not the sharp one-off hpShake used for a fresh hit) so the word
+   itself reads as unsteady the whole time condition stays that low.
+   Duration is set inline per state (slower for FAILING, quicker for
+   FADING) so the same keyframe serves both severities. */
+@keyframes bdhWordShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-0.5px, 0.5px) rotate(-0.6deg); }
+  50% { transform: translate(0.5px, -0.5px) rotate(0.5deg); }
+  75% { transform: translate(-0.5px, -0.5px) rotate(0.4deg); }
 }
 /* The ink-bleed vignette's "heartbeat" — a slow breathing pulse in opacity,
    sped up as condition drops (duration set inline per hp level). */

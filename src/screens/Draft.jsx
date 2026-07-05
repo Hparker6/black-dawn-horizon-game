@@ -18,6 +18,17 @@ function cardChips(card) {
   return out;
 }
 
+// Grid Compare's card height — shared by the real cards and the idle-phase
+// ghost placeholders (see GhostSlots below) so the "roll" button's preview
+// matches the size of what's about to land, instead of a small block
+// appearing where a much bigger empty frame just was. Matches
+// readingColumnWidth so the draft screen's content block and the event
+// screen's reading column feel like the same comfortable measure, with the
+// (now much wider) panel providing margin around both rather than either
+// one stretching to fill it.
+const GRID_CARD_MIN_HEIGHT = "232px";
+const GRID_MAX_WIDTH = "680px";
+
 function cardsContainerStyle(layout) {
   if (layout === "Fanned Hand")
     return { position: "relative", display: "flex", justifyContent: "center", alignItems: "flex-end", minHeight: "250px", paddingBottom: "14px", flex: "1" };
@@ -25,10 +36,10 @@ function cardsContainerStyle(layout) {
     return { display: "flex", gap: "10px", overflowX: "auto", scrollSnapType: "x mandatory", paddingBottom: "4px", flex: "1", minHeight: "0", scrollbarWidth: "none" };
   // Grid Compare: 2x2, capped width so cards stay card-shaped (not tall
   // columns) even on the wide desktop frame. No flex:1/1fr rows here on
-  // purpose — that stretched cards to fill the whole panel height. Sized to
-  // content instead, so both rows stay compact and the block centers in the
-  // available space (see the "active" wrapper below).
-  return { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", maxWidth: "520px", width: "100%", margin: "0 auto" };
+  // purpose — that stretched cards unevenly. Sized to content instead, so
+  // both rows stay compact and the block centers as a group with the
+  // roll/reroll button (see the "active"/idle wrappers below).
+  return { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", maxWidth: GRID_MAX_WIDTH, width: "100%", margin: "0 auto" };
 }
 
 // Rarity is a visual axis only (see data/items.js) — border/background color
@@ -75,11 +86,33 @@ function cardStyle(picked, pending, index, layout, rarity) {
       animationDelay: index * 120 + "ms",
     };
   }
-  return { ...base, minHeight: "144px" };
+  return { ...base, minHeight: GRID_CARD_MIN_HEIGHT };
+}
+
+// Idle-phase filler for Grid Compare: four dashed placeholder slots the same
+// size/shape as the cards about to land, so the ROLL button reads as "about
+// to fill this" instead of sitting alone in a mostly-empty page. Purely
+// decorative — no data, no interaction.
+function GhostSlots() {
+  return (
+    <div style={cardsContainerStyle("Grid Compare")}>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          style={{
+            minHeight: GRID_CARD_MIN_HEIGHT,
+            borderRadius: "3px",
+            border: `1px dashed ${t.borderDashed}`,
+            opacity: 0.5,
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 function cardDescStyle(layout) {
-  const base = { fontSize: "11px", color: t.muted, fontStyle: "italic", marginTop: "4px", lineHeight: "1.35" };
+  const base = { fontSize: "12px", color: t.muted, fontStyle: "italic", marginTop: "5px", lineHeight: "1.4" };
   if (layout === "Fanned Hand") return { ...base, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" };
   return base;
 }
@@ -205,7 +238,17 @@ export default function Draft({ round, totalRounds, category, respins, phase, ca
   }, [phase, category, cards, reduceMotion]);
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 18px 20px", animation: "bdhFadeUp .4s ease both" }}>
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        padding: "20px 18px 20px",
+        animation: "bdhFadeUp .4s ease both",
+        backgroundImage: t.gameplayRuleBg,
+        backgroundSize: t.journalRuleSize,
+      }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <div style={{ fontFamily: t.fontDisplay, fontSize: "24px", color: t.ink, letterSpacing: "1px" }}>
           ROUND {round + 1} / {totalRounds}
@@ -216,15 +259,17 @@ export default function Draft({ round, totalRounds, category, respins, phase, ca
           <span style={{ fontSize: "19px", color: t.gold }}>◈ {respins}</span>
         </div>
       </div>
-      <div style={{ fontFamily: t.fontDisplay, fontSize: "21px", color: t.ink, marginTop: "5px", letterSpacing: ".5px" }}>{category.cat}</div>
-      <div style={{ fontSize: "12px", color: t.muted, fontStyle: "italic", margin: "2px 0 14px", textWrap: "pretty" }}>{category.constraint}</div>
+      <div style={{ fontFamily: t.fontDisplay, fontSize: "23px", color: t.ink, marginTop: "5px", letterSpacing: ".5px" }}>{category.cat}</div>
+      <div style={{ fontSize: "13px", color: t.muted, fontStyle: "italic", margin: "2px 0 14px", textWrap: "pretty" }}>{category.constraint}</div>
 
       {idle && (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "20px" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "22px", minHeight: 0 }}>
+          <GhostSlots />
           <button
             onClick={onRoll}
             style={{
               width: "100%",
+              maxWidth: GRID_MAX_WIDTH,
               border: "none",
               cursor: "pointer",
               background: t.gold,
@@ -244,7 +289,7 @@ export default function Draft({ round, totalRounds, category, respins, phase, ca
       )}
 
       {active && (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px", flex: 1, minHeight: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "16px", flex: 1, minHeight: 0 }}>
           <div data-noscroll="true" style={cardsContainerStyle(layout)}>
             {[0, 1, 2, 3].map((i) => {
               // While rolling and not yet settled, show the cycling face from
@@ -322,7 +367,7 @@ export default function Draft({ round, totalRounds, category, respins, phase, ca
                       <div style={{ fontSize: "9px", letterSpacing: "1.5px", color: t.rarityColors(rarity).text, marginBottom: "2px" }}>
                         {t.RARITY_LABEL[rarity]}
                       </div>
-                      <div style={{ fontSize: "15px", color: t.ink, letterSpacing: ".3px", paddingRight: "22px" }}>{displayCard.name}</div>
+                      <div style={{ fontSize: "17px", color: t.ink, letterSpacing: ".3px", paddingRight: "22px" }}>{displayCard.name}</div>
                       <div style={cardDescStyle(layout)}>{displayCard.desc}</div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "auto", paddingTop: "8px" }}>
                         {cardChips(displayCard).map((chp, ci) => (
@@ -369,6 +414,8 @@ export default function Draft({ round, totalRounds, category, respins, phase, ca
               onClick={onReroll}
               style={{
                 width: "100%",
+                maxWidth: layout === "Grid Compare" ? GRID_MAX_WIDTH : undefined,
+                margin: layout === "Grid Compare" ? "0 auto" : undefined,
                 border: `1px solid ${t.gold}`,
                 cursor: "pointer",
                 background: t.highlightBg,

@@ -59,21 +59,48 @@ function weightedPick(weights) {
 }
 
 // Picks the event `type` to draw next given how far into the run we are
-// (`progress`, 0..1 across the planned non-final event count) and whether
-// the last event was a significant setback (see isSignificantSetback) —
-// the relief valve overrides the phase curve for exactly one draw.
-export function pickEventType(progress, reliefBias) {
+// (`progress`, 0..1 across the planned non-final event count), whether the
+// last event was a significant setback (see isSignificantSetback), and a
+// route-driven danger multiplier (see ROUTE_MODIFIERS below) — the relief
+// valve overrides the phase curve for exactly one draw regardless of route.
+export function pickEventType(progress, reliefBias, dangerWeightMultiplier = 1) {
   if (reliefBias) return weightedPick(PACING.reliefValve.weights) || 'quiet';
   const phase = phaseFor(progress);
   const idx = PACING.phases.indexOf(phase);
   const climaxShare = PACING.climaxShareOfDanger[idx] || 0;
   const weights = { ...phase.weights };
+  if (weights.danger) weights.danger *= dangerWeightMultiplier;
   if (climaxShare > 0 && weights.danger > 0) {
     const toClimax = weights.danger * climaxShare;
     weights.danger -= toClimax;
     weights.climax = (weights.climax || 0) + toClimax;
   }
   return weightedPick(weights) || 'danger';
+}
+
+// The intro's route choice (see data/intro.js) — one flag, stored in the
+// run's normal flags array like any other narrative flag, read here rather
+// than threaded as a separate parameter so the two call sites that need it
+// (pickNextEvent's type weighting, applyResult's day math) don't need their
+// own signatures touched. Tuned to nudge the outcome distribution, not
+// swing it wildly: highway trades a real bump in danger/climax exposure for
+// fewer days burned per event (faster, riskier); backroads trades the
+// reverse (slower, safer). Both are single multipliers here so the feel is
+// adjustable without touching the sampler or applyResult itself.
+export const ROUTE_MODIFIERS = {
+  route_highway: { label: 'THE HIGHWAYS', dangerWeightMultiplier: 1.35, daysPerEventMultiplier: 0.82 },
+  route_backroads: { label: 'THE BACKROADS', dangerWeightMultiplier: 0.7, daysPerEventMultiplier: 1.22 },
+};
+
+export function routeFromFlags(flags) {
+  if (!flags) return null;
+  if (flags.includes('route_highway')) return 'route_highway';
+  if (flags.includes('route_backroads')) return 'route_backroads';
+  return null;
+}
+
+export function routeModifier(route) {
+  return ROUTE_MODIFIERS[route] || { label: null, dangerWeightMultiplier: 1, daysPerEventMultiplier: 1 };
 }
 
 // A choice outcome counts as a "significant setback" — and triggers the

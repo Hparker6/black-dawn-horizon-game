@@ -30,6 +30,17 @@ export const badgeLockedBg = "#ded4bd";
 export const badgeReadyBg = green;
 export const badgeCheckBg = "#e5c877";
 
+// Choice-kind visual hierarchy (Events.jsx): a player should be able to
+// categorize a choice's risk at a glance, before reading it — icon + color
+// + weight, never color alone (colorblind-safe: every kind also carries a
+// distinct icon and badge text). "safe" is deliberately a paler, quieter
+// green than "ready"'s — safe is just "no risk," ready is "you're equipped
+// for this," and they shouldn't read as the same level of confidence.
+export const safeBorder = "#9db89a";
+export const safeBg = "#f2f6f1";
+export const checkBorder = "rgba(198,40,40,.45)";
+export const checkBg = "rgba(198,40,40,.05)";
+
 export const highlightBg = "#f6edd4";
 export const highlightText = "#8a6a12";
 export const rankMuted = "#8a7f66";
@@ -54,14 +65,30 @@ export const coffeeRingBg =
 // Reading screens (event/results) use a narrower centered column instead of
 // the full wide paper panel, so line lengths stay comfortable and the frame
 // hugs the (intentionally terse) prose like a journal page rather than
-// stranding it in a wide field.
-export const readingColumnWidth = "620px";
+// stranding it in a wide field. The panel itself is now much wider (see
+// App.jsx's outer wrapper) — this stays a comfortable measure rather than
+// growing with it; the extra room becomes margin/framing around it instead
+// of stretching line length.
+export const readingColumnWidth = "680px";
 
 // Faint ruled-notebook-paper lines, same ink tint as the coffee ring, so
 // empty vertical space in a short entry reads as "blank journal page
 // waiting to be filled" rather than a layout bug.
 export const journalRuleBg = "linear-gradient(rgba(101,67,26,.06) 1px, transparent 1px)";
+
+// A more present version of the rule above, shared by the two gameplay
+// screens (draft + event) — both have more open space to fill than
+// Results' recap text does, and both need to visibly read as "ruled
+// journal page" rather than flat cream. journalRuleBg stays as-is on
+// Results, which isn't part of this pass.
+export const gameplayRuleBg = "linear-gradient(rgba(101,67,26,.16) 1px, transparent 1px)";
 export const journalRuleSize = "100% 28px";
+
+// Soft outer glow so the panel reads as a deliberately framed object sitting
+// on the desk, not a rectangle floating in empty dark space — used on the
+// app's outer wrapper only (see App.jsx), independent of any per-screen
+// background.
+export const panelFrameGlow = "0 0 0 1px rgba(212,168,67,.08), 0 0 90px 10px rgba(212,168,67,.05), 0 30px 80px -20px rgba(0,0,0,.8)";
 
 // Draft item rarity. Deliberately NOT a power ladder — see the balance note
 // in data/items.js. Colors/labels only; the CSS glow/shimmer/settle
