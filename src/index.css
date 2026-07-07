@@ -316,6 +316,33 @@ body {
   box-shadow: 0 1px 0 #000 !important;
 }
 
+/* NotebookHome's four taped-strip nav buttons: must never read as a modern
+   HTML button — no fill, no border, no radius, just the paper underneath
+   with a hand pressing on it. Hover lifts + darkens like a strip peeling
+   slightly off the tape; active presses it back flat against the page. */
+.bdh-strip-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bdh-strip-btn:hover {
+  background: rgba(40, 30, 15, 0.07);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 10px -6px rgba(0, 0, 0, 0.35);
+}
+.bdh-strip-btn:active {
+  background: rgba(40, 30, 15, 0.13);
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
 /* Field-note margin scrap (App.jsx's event screen): only shown once the
    panel is wide enough to have real gutter space beside the reading
    column — below that width the column fills the panel and there's
