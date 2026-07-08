@@ -20,6 +20,11 @@
 export const INTRO_SCREENS = [
   {
     title: "THE OUTBREAK",
+    // Full-page background artwork (the fallen city) rendered behind the
+    // log text by AtmosphereScreen — dimmed, desaturated, and feathered
+    // into the paper at the edges so the words stay the focus and the art
+    // reads as part of the same recovered page, not a backdrop swap.
+    art: "/outbreak-city.jpg",
     body: [
       "Three weeks since the outbreak.",
       "The grid failed. The cities fell.",

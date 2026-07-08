@@ -3,6 +3,7 @@ import { INTRO_SCREENS } from "../data/intro.js";
 import RouteSelect from "./RouteSelect.jsx";
 import PageTurner from "../components/PageTurner.jsx";
 import Reveal from "../components/Reveal.jsx";
+import { prefersReducedMotion } from "../engine/motion.js";
 
 // Lore ink: darker than the app's default t.ink specifically for long-form
 // reading on textured paper, with a faint paper-highlight shadow that lifts
@@ -102,6 +103,13 @@ function LeavingHomeScreen({ screen, onContinue }) {
 // feathered glow) that quiets the coffee-ring/texture noise behind the
 // text without hiding the page. Tap-anywhere-to-continue (plus an explicit
 // affordance) — no timer, ever; the staggered reveals never gate input.
+//
+// screen.art (optional) is full-page background artwork behind the log:
+// dimmed + slightly desaturated, feathered into the paper at the edges by a
+// radial wash, and fading in a beat after the page so the words register
+// first and the art surfaces behind them. It's absolutely positioned
+// (zero layout shift), decorative (aria-hidden), and sits under the
+// parchment veil, which is what keeps the body text effortless to read.
 function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
   const bodyDelay = (i) => 360 + i * REVEAL_STEP_MS;
   const continueDelay = bodyDelay(screen.body.length) + 220;
@@ -114,80 +122,132 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onContinue();
       }}
-      style={{ flex: 1, display: "flex", flexDirection: "column", padding: "48px 34px 38px", cursor: "pointer" }}
+      style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", padding: "48px 34px 38px", cursor: "pointer" }}
     >
-      <Reveal duration={450} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", letterSpacing: "3px", color: t.muted }}>
-        <span>RECOVERED LOG</span>
-        {showSkip && (
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              onSkip();
+      {screen.art && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            overflow: "hidden",
+            pointerEvents: "none",
+            animation: prefersReducedMotion() ? "none" : "bdhOverlay .9s ease both",
+            animationDelay: "150ms",
+          }}
+        >
+          <img
+            src={screen.art}
+            alt=""
+            decoding="async"
+            draggable={false}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              filter: "saturate(.75) sepia(.12)",
+              opacity: 0.5,
+              userSelect: "none",
             }}
-            style={{ letterSpacing: "1.5px", color: t.rankMuted, textDecoration: "underline", cursor: "pointer" }}
+          />
+          <div style={{ position: "absolute", inset: 0, background: `radial-gradient(115% 115% at 50% 45%, transparent 42%, ${t.paper} 97%)`, opacity: 0.9 }} />
+        </div>
+      )}
+
+      {/* Above-the-art layer: everything readable lives here so the
+          absolutely-positioned artwork can never paint over it. */}
+      <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
+        <Reveal duration={450} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", letterSpacing: "3px", color: t.muted }}>
+          <span>RECOVERED LOG</span>
+          {showSkip && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onSkip();
+              }}
+              style={{ letterSpacing: "1.5px", color: t.rankMuted, textDecoration: "underline", cursor: "pointer" }}
+            >
+              SKIP INTRO &rsaquo;
+            </span>
+          )}
+        </Reveal>
+        <div style={{ height: "1px", background: t.borderSubtle, margin: "14px 0 auto" }} />
+
+        {/* The parchment veil: translucent paper wash + feathered halo (the
+            boxShadow) so it reads as a cleaner patch of the same page, not a
+            card sitting on top of it. */}
+        <div
+          style={{
+            alignSelf: "center",
+            margin: "28px 0",
+            maxWidth: "620px",
+            width: "100%",
+            textAlign: "center",
+            background: "rgba(250,246,236,.72)",
+            boxShadow: "0 0 30px 22px rgba(250,246,236,.72)",
+            borderRadius: "8px",
+            padding: "34px 38px",
+            boxSizing: "border-box",
+          }}
+        >
+          {screen.title && (
+            <Reveal delay={150}>
+              <div
+                style={{
+                  fontFamily: t.fontDisplay,
+                  fontSize: "clamp(26px,3vw,34px)",
+                  letterSpacing: "1px",
+                  color: LORE_INK,
+                  textShadow: "1.5px 1.5px 0 rgba(139,0,0,.25), 0 1px 0 rgba(255,255,255,.3)",
+                  marginBottom: "24px",
+                }}
+              >
+                {screen.title}
+              </div>
+            </Reveal>
+          )}
+          {screen.body.map((line, i) => (
+            <Reveal key={i} delay={bodyDelay(i)}>
+              <p
+                style={{
+                  margin: i === 0 ? 0 : "20px 0 0",
+                  fontFamily: t.fontBody,
+                  fontSize: "clamp(17px,2.1vw,21px)",
+                  lineHeight: 1.85,
+                  letterSpacing: ".2px",
+                  color: LORE_INK,
+                  textShadow: LORE_SHADOW,
+                }}
+              >
+                {line}
+              </p>
+            </Reveal>
+          ))}
+        </div>
+
+        <div style={{ height: "1px", background: t.borderSubtle, margin: "auto 0 20px" }} />
+        <Reveal delay={continueDelay} style={{ textAlign: "center" }}>
+          {/* Same parchment-wash treatment as the body veil, in miniature —
+              without it this hint lands on the artwork's densest detail and
+              disappears. */}
+          <div
+            style={{
+              display: "inline-block",
+              padding: "6px 16px",
+              background: "rgba(250,246,236,.72)",
+              boxShadow: "0 0 14px 10px rgba(250,246,236,.72)",
+              borderRadius: "6px",
+              fontSize: "12px",
+              letterSpacing: "2px",
+              color: t.rankMuted,
+            }}
           >
-            SKIP INTRO &rsaquo;
-          </span>
-        )}
-      </Reveal>
-      <div style={{ height: "1px", background: t.borderSubtle, margin: "14px 0 auto" }} />
-
-      {/* The parchment veil: translucent paper wash + feathered halo (the
-          boxShadow) so it reads as a cleaner patch of the same page, not a
-          card sitting on top of it. */}
-      <div
-        style={{
-          alignSelf: "center",
-          margin: "28px 0",
-          maxWidth: "620px",
-          width: "100%",
-          textAlign: "center",
-          background: "rgba(250,246,236,.72)",
-          boxShadow: "0 0 30px 22px rgba(250,246,236,.72)",
-          borderRadius: "8px",
-          padding: "34px 38px",
-          boxSizing: "border-box",
-        }}
-      >
-        {screen.title && (
-          <Reveal delay={150}>
-            <div
-              style={{
-                fontFamily: t.fontDisplay,
-                fontSize: "clamp(26px,3vw,34px)",
-                letterSpacing: "1px",
-                color: LORE_INK,
-                textShadow: "1.5px 1.5px 0 rgba(139,0,0,.25), 0 1px 0 rgba(255,255,255,.3)",
-                marginBottom: "24px",
-              }}
-            >
-              {screen.title}
-            </div>
-          </Reveal>
-        )}
-        {screen.body.map((line, i) => (
-          <Reveal key={i} delay={bodyDelay(i)}>
-            <p
-              style={{
-                margin: i === 0 ? 0 : "20px 0 0",
-                fontFamily: t.fontBody,
-                fontSize: "clamp(17px,2.1vw,21px)",
-                lineHeight: 1.85,
-                letterSpacing: ".2px",
-                color: LORE_INK,
-                textShadow: LORE_SHADOW,
-              }}
-            >
-              {line}
-            </p>
-          </Reveal>
-        ))}
+            TAP TO CONTINUE &rsaquo;
+          </div>
+        </Reveal>
       </div>
-
-      <div style={{ height: "1px", background: t.borderSubtle, margin: "auto 0 20px" }} />
-      <Reveal delay={continueDelay}>
-        <div style={{ textAlign: "center", fontSize: "12px", letterSpacing: "2px", color: t.rankMuted }}>TAP TO CONTINUE &rsaquo;</div>
-      </Reveal>
     </div>
   );
 }
