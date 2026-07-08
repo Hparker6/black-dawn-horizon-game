@@ -316,6 +316,54 @@ body {
   box-shadow: 0 1px 0 #000 !important;
 }
 
+/* NotebookHome's four taped-strip nav buttons: must never read as a modern
+   HTML button — no fill, no border, no radius, just the paper underneath
+   with a hand pressing on it. Hover lifts + darkens like a strip peeling
+   slightly off the tape; active presses it back flat against the page. */
+.bdh-strip-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bdh-strip-btn:hover {
+  background: rgba(40, 30, 15, 0.07);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 10px -6px rgba(0, 0, 0, 0.35);
+}
+.bdh-strip-btn:active {
+  background: rgba(40, 30, 15, 0.13);
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* SurvivalTip.jsx's taped note: click-navigable (left half back, right half
+   forward) but must read as a real note sitting on the page, not a UI
+   control — no arrow icons, no border, no fill change on hover. The only
+   feedback is a faint press (paper physically nudged) on click/tap, and a
+   soft warm glow on keyboard focus only (:focus-visible, never on mouse
+   click) so keyboard users still get an indicator without a blue browser
+   outline breaking the photo's illusion.  */
+.bdh-tip-note {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  transition: transform 0.12s ease;
+}
+.bdh-tip-note:active {
+  transform: scale(0.97);
+}
+.bdh-tip-note:focus-visible {
+  box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.35);
+  border-radius: 2px;
+}
+
 /* Field-note margin scrap (App.jsx's event screen): only shown once the
    panel is wide enough to have real gutter space beside the reading
    column — below that width the column fills the panel and there's

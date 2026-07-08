@@ -21,7 +21,7 @@ import LoadoutStrip from "./components/LoadoutStrip.jsx";
 import ProgressTrail from "./components/ProgressTrail.jsx";
 import DestinationEta from "./components/DestinationEta.jsx";
 import DangerAtmosphere from "./components/DangerAtmosphere.jsx";
-import Title from "./screens/Title.jsx";
+import NotebookHome from "./components/NotebookHome.jsx";
 import Intro from "./screens/Intro.jsx";
 import Draft from "./screens/Draft.jsx";
 import Events from "./screens/Events.jsx";
@@ -575,13 +575,29 @@ export default function App() {
           monitors. 1500px comfortably fills 1280-1920px viewports while
           still reading as a framed object, not a full-bleed page. */}
       <div style={{ position: "relative", width: "100%", maxWidth: "1500px", display: "flex", flexDirection: "column", gap: "10px" }}>
-        <Ribbon tab={state.tab} onTabSurvival={onTabSurvival} onTabLeader={onTabLeader} onTabAch={onTabAch} onTabEndings={onTabEndings} onExitToTitle={onExitToTitle} />
+        {state.tab === "survival" && state.screen === "title" ? (
+          // The notebook photo IS the home screen — no Ribbon, no paper
+          // panel chrome around it, just the artwork with the nav/CTA
+          // layered directly on its taped strips. Every other screen keeps
+          // the existing Ribbon + journal-panel treatment untouched.
+          <NotebookHome
+            best={state.best}
+            played={state.played}
+            ach={state.ach}
+            endingsFound={state.endingsFound}
+            onPlay={onPlay}
+            onTabLeader={onTabLeader}
+            onTabAch={onTabAch}
+            onTabEndings={onTabEndings}
+          />
+        ) : (
+          <>
+            <Ribbon tab={state.tab} onTabSurvival={onTabSurvival} onTabLeader={onTabLeader} onTabAch={onTabAch} onTabEndings={onTabEndings} onExitToTitle={onExitToTitle} />
 
-        <DangerAtmosphere hp={state.hp} hpMax={state.hpMax} reduceMotion={REDUCE_MOTION}>
-          {state.tab === "survival" && (
-            <>
-              {state.screen === "title" && <Title best={state.best} played={state.played} onPlay={onPlay} />}
-              {state.screen === "intro" && (
+            <DangerAtmosphere hp={state.hp} hpMax={state.hpMax} reduceMotion={REDUCE_MOTION}>
+              {state.tab === "survival" && (
+                <>
+                  {state.screen === "intro" && (
                 <Intro step={state.introStep} onContinue={onIntroContinue} onSkip={onSkipIntro} onChooseRoute={onChooseRoute} />
               )}
               {state.screen === "spin" && (
@@ -733,10 +749,12 @@ export default function App() {
             </>
           )}
 
-          {state.tab === "leaderboard" && <Leaderboard best={state.best} />}
-          {state.tab === "achievements" && <Achievements unlocked={state.ach} />}
-          {state.tab === "endings" && <EndingsCollection discovered={state.endingsFound} />}
-        </DangerAtmosphere>
+              {state.tab === "leaderboard" && <Leaderboard best={state.best} />}
+              {state.tab === "achievements" && <Achievements unlocked={state.ach} />}
+              {state.tab === "endings" && <EndingsCollection discovered={state.endingsFound} />}
+            </DangerAtmosphere>
+          </>
+        )}
       </div>
     </div>
   );
