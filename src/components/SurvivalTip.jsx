@@ -19,7 +19,11 @@ function step(i, delta) {
 // to go forward, same convention as a comic reader. A manual tap restarts
 // the auto-cycle timer rather than just letting it keep running, so the
 // tip you just chose doesn't get yanked away a moment later.
-export default function SurvivalTip() {
+//
+// fontSize comes from NotebookHome's artwork-scale system (text must track
+// the paper, not the viewport — see the scaling note there); the default
+// only exists so the component still renders standalone.
+export default function SurvivalTip({ fontSize = "13px" }) {
   const [index, setIndex] = useState(() => Math.floor(Math.random() * SURVIVAL_TIPS.length));
   const [visible, setVisible] = useState(true);
   const timerRef = useRef(null);
@@ -75,7 +79,7 @@ export default function SurvivalTip() {
           transition: `opacity ${FADE_MS}ms ease`,
           fontFamily: t.fontBody,
           fontWeight: "bold",
-          fontSize: "clamp(10px,1.3vw,13px)",
+          fontSize,
           letterSpacing: ".5px",
         }}
       >
@@ -89,7 +93,7 @@ export default function SurvivalTip() {
           transition: `opacity ${FADE_MS}ms ease`,
           margin: "8px 0 0",
           fontFamily: t.fontBody,
-          fontSize: "clamp(10px,1.3vw,13px)",
+          fontSize,
           lineHeight: 1.4,
         }}
       >

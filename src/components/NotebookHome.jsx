@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import * as t from "../styles/tokens.js";
 import { ACH } from "../data/achievements.js";
 import { ENDINGS } from "../data/endings.js";
@@ -51,6 +52,52 @@ const TIPS_ZONE = { left: 58.3, top: 16.5 };
 // enough to crowd the bottom torn edge of its own scrap.
 const JOURNAL_ZONE = { left: 59.6, top: 62.5, width: 22.0, height: 22.7 };
 
+// --- Responsive scaling ---------------------------------------------------
+// The zones above are percentages of the artwork, so POSITION already
+// survives any container size — what broke on phones/small monitors was
+// TYPE: fonts were clamp()ed against the *viewport* with px floors, so when
+// the notebook shrank the text didn't, and the title block spilled down
+// into the BEGIN strip while strip labels outgrew their strips.
+//
+// Fix: all type + px spacing is specified in "artwork pixels" (the same
+// 1024x682 grid the zones were measured on) and multiplied by the
+// container's live scale factor, so text shrinks and grows in lockstep with
+// the paper it sits on. Values are matched to how the spread rendered at
+// its 1150px desktop cap before this pass, so desktop looks unchanged.
+//
+// Below STACK_BREAKPOINT the two-page spread is physically too small for
+// proportional type to help (strip labels would land around 7px on a
+// portrait phone), so the component switches to a stacked layout: the same
+// artwork cropped to its left and right page halves, one above the other,
+// each near full-width. Each page then renders ~2x larger without touching
+// the zone table — its percentages just get remapped from spread-space to
+// half-page space (x2 horizontally, y unchanged).
+const STACK_BREAKPOINT = 640;
+
+const TYPE = {
+  title: 48,
+  tagline: 19,
+  taglineGap: 22, // breathing room under the tagline, above BEGIN
+  tip: 12,
+  tipMaxWidth: 160,
+  journalHead: 13,
+  journalHeadLs: 1.3,
+  journalLine: 16,
+  journalPadRight: 18,
+};
+
+// Per-strip label sizing (artwork px). The two long words share a smaller
+// size than BEGIN/ENDINGS, same hierarchy as before. floors keep the labels
+// from dipping below legibility at the narrowest sizes each mode allows.
+const STRIP_LABELS = [
+  { label: "BEGIN", size: 21, ls: 3.5, floor: 12 },
+  { label: "LEADERBOARD", size: 16, ls: 1.3, floor: 10 },
+  { label: "ACHIEVEMENTS", size: 16, ls: 1.3, floor: 10 },
+  { label: "ENDINGS", size: 19, ls: 2.6, floor: 11 },
+];
+
+const IMG_ALT = "A weathered field journal, open to its first page.";
+
 // Solid dark charcoal (not pure #000, not multiply-blended) for anything
 // that isn't the display title — multiply was washing out small body text
 // to the point of illegibility against this much paper texture.
@@ -61,11 +108,84 @@ const inkSolid = { color: INK_SOLID, opacity: 0.92, textShadow: "0px 1px 0px rgb
 const CRIMSON = "#8b0000";
 
 function zoneStyle(z) {
-  return { position: "absolute", left: `${z.left}%`, top: `${z.top}%`, width: `${z.width}%`, height: `${z.height}%` };
+  return {
+    position: "absolute",
+    left: `${z.left}%`,
+    top: `${z.top}%`,
+    width: z.width != null ? `${z.width}%` : undefined,
+    height: z.height != null ? `${z.height}%` : undefined,
+  };
 }
 
-function stripStyle(z, tilt) {
-  return { ...zoneStyle({ left: STRIP_LEFT, width: STRIP_WIDTH, top: z.top, height: z.height }), transform: `rotate(${tilt}deg)` };
+// Remaps a spread-space zone (percentages of the full-width artwork) into
+// half-page space (percentages of a 512px-wide crop): x doubles, y is
+// untouched because the crop keeps the artwork's full height.
+function toHalf(side) {
+  return (z) => ({
+    ...z,
+    left: side === "left" ? z.left * 2 : (z.left - 50) * 2,
+    width: z.width != null ? z.width * 2 : undefined,
+  });
+}
+const identity = (z) => z;
+
+function useStackedLayout() {
+  const [stacked, setStacked] = useState(
+    () => window.matchMedia(`(max-width: ${STACK_BREAKPOINT - 1}px)`).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${STACK_BREAKPOINT - 1}px)`);
+    const onChange = (e) => setStacked(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return stacked;
+}
+
+// Live px-per-artwork-px scale of whichever container `ref` is attached to.
+// In spread mode the container spans the full 1024-grid; in stacked mode it
+// spans one 512-wide page half.
+function useArtScale(stacked) {
+  const ref = useRef(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [stacked]);
+  return { ref, scale: width / (stacked ? 512 : 1024) };
+}
+
+// One cropped page half for the stacked layout: the full artwork rendered
+// at 200% width inside an overflow-hidden frame, shifted left for the
+// right-hand page. objectFit behavior matches the spread's (the frame keeps
+// the artwork's own aspect, so "fill" introduces no distortion).
+function PageHalf({ side, children }) {
+  return (
+    <div style={{ position: "relative", width: "100%", aspectRatio: "512 / 682", overflow: "hidden" }}>
+      <img
+        src="/notebook-home.jpg"
+        alt={side === "left" ? IMG_ALT : ""}
+        aria-hidden={side === "right" || undefined}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: side === "left" ? 0 : "-100%",
+          width: "200%",
+          height: "100%",
+          objectFit: "fill",
+          userSelect: "none",
+          pointerEvents: "none",
+        }}
+        draggable={false}
+      />
+      {children}
+    </div>
+  );
 }
 
 // Nav-strip label text: bold and fully opaque (not inkSolid's 0.92) with a
@@ -74,11 +194,8 @@ function stripStyle(z, tilt) {
 // sit on four strips of visibly different tone (ACHIEVEMENTS' tan paper is
 // noticeably darker than the others), and regular-weight type on top of the
 // distressed typewriter font's own built-in texture was reading as faded on
-// every strip, not just that one. The two shortest words (LEADERBOARD,
-// ACHIEVEMENTS) also had a lower size floor than the other two, so they hit
-// their smallest, least-legible size first on narrow viewports — raised to
-// match. Bold + full opacity + a firmer shadow fixes contrast without
-// changing color, tape, or layout.
+// every strip, not just that one. Bold + full opacity + a firmer shadow
+// fixes contrast without changing color, tape, or layout.
 function stripLabelStyle(fontSize, letterSpacing) {
   return {
     color: INK_SOLID,
@@ -115,73 +232,71 @@ function journalLines({ best, played, ach, endingsFound }) {
 
 export default function NotebookHome({ best, played, ach, endingsFound, onPlay, onTabLeader, onTabAch, onTabEndings }) {
   const lines = journalLines({ best, played, ach, endingsFound });
+  const stacked = useStackedLayout();
+  const { ref, scale } = useArtScale(stacked);
+  // Artwork-px -> rendered-px. The floor only matters at the smallest sizes
+  // each mode allows; everywhere else text tracks the paper exactly.
+  const px = (n, floor = 0) => `${Math.max(floor, n * scale)}px`;
 
-  return (
-    <div style={{ width: "100%", display: "flex", justifyContent: "center", padding: "6px 0" }}>
-      <div
-        style={{
-          position: "relative",
-          width: "min(100%, 1150px, calc(86vh * 1024 / 682))",
-          aspectRatio: "1024 / 682",
-          animation: "bdhFadeUp .5s ease both",
-        }}
-      >
-        <img
-          src="/notebook-home.jpg"
-          alt="A weathered field journal, open to its first page."
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "fill", userSelect: "none", pointerEvents: "none" }}
-          draggable={false}
-        />
+  const stripActions = [onPlay, onTabLeader, onTabAch, onTabEndings];
 
-        {/* Left page, large blank leaf: game title, typed/penciled onto the
-            page. flex-start + fixed gaps (not centered/auto-margin) so the
-            block's height never depends on whether the best/played line is
-            present. */}
-        <div style={{ ...zoneStyle(TITLE_ZONE), transform: `rotate(${TITLE_TILT}deg)`, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "3% 4% 0" }}>
-          <div
-            style={{
-              mixBlendMode: "multiply",
-              fontFamily: t.fontDisplay,
-              color: INK_SOLID,
-              lineHeight: 0.92,
-              letterSpacing: "1px",
-              fontSize: "clamp(26px,5.2vw,54px)",
-              textShadow: "1.5px 1.5px 0 rgba(139,0,0,.22), 0 1px 0 rgba(255,255,255,.25)",
-              marginTop: "4%",
-              animation: "bdhFlick 6s ease-in-out infinite",
-            }}
-          >
-            BLACK
-            <br />
-            DAWN
-            <br />
-            <span style={{ color: CRIMSON }}>HORIZON</span>
-          </div>
-          {/* margin-bottom (not just marginTop) so this line keeps real
-              breathing room below it regardless of the flex spacer beneath —
-              it was reading as crowded against the BEGIN strip. */}
-          <div style={{ ...inkSolid, marginTop: "7%", marginBottom: "25px", fontFamily: t.fontHand, fontWeight: 700, fontSize: "clamp(14px,2vw,21px)", letterSpacing: ".3px" }}>
-            &ldquo;How long would you survive?&rdquo;
-          </div>
-          <div style={{ flex: 1 }} />
+  // Left page, large blank leaf: game title, typed/penciled onto the page,
+  // plus the four taped strips of primary nav (one action per strip).
+  // flex-start + fixed gaps (not centered/auto-margin) on the title block so
+  // its height never depends on whether the best/played line is present.
+  const leftPage = (m) => (
+    <>
+      <div style={{ ...zoneStyle(m(TITLE_ZONE)), transform: `rotate(${TITLE_TILT}deg)`, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "3% 4% 0" }}>
+        <div
+          style={{
+            mixBlendMode: "multiply",
+            fontFamily: t.fontDisplay,
+            color: INK_SOLID,
+            lineHeight: 0.92,
+            letterSpacing: "1px",
+            fontSize: px(TYPE.title, 20),
+            textShadow: "1.5px 1.5px 0 rgba(139,0,0,.22), 0 1px 0 rgba(255,255,255,.25)",
+            marginTop: "4%",
+            animation: "bdhFlick 6s ease-in-out infinite",
+          }}
+        >
+          BLACK
+          <br />
+          DAWN
+          <br />
+          <span style={{ color: CRIMSON }}>HORIZON</span>
         </div>
+        {/* margin-bottom (not just marginTop) so this line keeps real
+            breathing room below it regardless of the flex spacer beneath —
+            it was reading as crowded against the BEGIN strip. */}
+        <div style={{ ...inkSolid, marginTop: "7%", marginBottom: px(TYPE.taglineGap), fontFamily: t.fontHand, fontWeight: 700, fontSize: px(TYPE.tagline, 11), letterSpacing: ".3px" }}>
+          &ldquo;How long would you survive?&rdquo;
+        </div>
+        <div style={{ flex: 1 }} />
+      </div>
 
-        {/* Left page, four taped strips: primary nav, one action per strip. */}
-        <button className="bdh-strip-btn" style={stripStyle(STRIP_ZONES[0], STRIP_TILT[0])} onClick={onPlay}>
-          <span style={stripLabelStyle("clamp(15px,2.3vw,24px)", "4px")}>BEGIN</span>
+      {STRIP_LABELS.map((s, i) => (
+        <button
+          key={s.label}
+          className="bdh-strip-btn"
+          style={{
+            ...zoneStyle(m({ left: STRIP_LEFT, width: STRIP_WIDTH, top: STRIP_ZONES[i].top, height: STRIP_ZONES[i].height })),
+            transform: `rotate(${STRIP_TILT[i]}deg)`,
+          }}
+          onClick={stripActions[i]}
+        >
+          <span style={stripLabelStyle(px(s.size, s.floor), px(s.ls))}>{s.label}</span>
         </button>
-        <button className="bdh-strip-btn" style={stripStyle(STRIP_ZONES[1], STRIP_TILT[1])} onClick={onTabLeader}>
-          <span style={stripLabelStyle("clamp(13px,1.7vw,18px)", "1.5px")}>LEADERBOARD</span>
-        </button>
-        <button className="bdh-strip-btn" style={stripStyle(STRIP_ZONES[2], STRIP_TILT[2])} onClick={onTabAch}>
-          <span style={stripLabelStyle("clamp(13px,1.7vw,18px)", "1.5px")}>ACHIEVEMENTS</span>
-        </button>
-        <button className="bdh-strip-btn" style={stripStyle(STRIP_ZONES[3], STRIP_TILT[3])} onClick={onTabEndings}>
-          <span style={stripLabelStyle("clamp(14px,2vw,21px)", "3px")}>ENDINGS</span>
-        </button>
+      ))}
+    </>
+  );
 
+  const rightPage = (m) => {
+    const tips = m(TIPS_ZONE);
+    return (
+      <>
         {/* Right page, top-left scrap: cycling sticky-note tip (see
-            SurvivalTip.jsx). Fixed max-width (not a percentage zone) per
+            SurvivalTip.jsx). Scaled max-width (not a percentage zone) per
             spec, so it reads as a small taped note rather than stretching
             to fill its region — and has no fixed height, since tip length
             varies and this scrap should grow to fit rather than clip (see
@@ -191,9 +306,9 @@ export default function NotebookHome({ best, played, ach, endingsFound, onPlay, 
         <div
           style={{
             position: "absolute",
-            left: `${TIPS_ZONE.left}%`,
-            top: `${TIPS_ZONE.top}%`,
-            maxWidth: "180px",
+            left: `${tips.left}%`,
+            top: `${tips.top}%`,
+            maxWidth: px(TYPE.tipMaxWidth, 110),
             padding: "10px",
             overflowWrap: "break-word",
             textAlign: "center",
@@ -201,7 +316,7 @@ export default function NotebookHome({ best, played, ach, endingsFound, onPlay, 
             boxSizing: "border-box",
           }}
         >
-          <SurvivalTip />
+          <SurvivalTip fontSize={px(TYPE.tip, 10)} />
         </div>
 
         {/* Right page, bottom torn scrap: running survival journal recap.
@@ -211,8 +326,8 @@ export default function NotebookHome({ best, played, ach, endingsFound, onPlay, 
             toward zero height instead of just clipping their tail, which is
             how a single overlong line once collapsed the whole recap down to
             a sliver (see journalLines' comment on the line-count budget). */}
-        <div style={{ ...zoneStyle(JOURNAL_ZONE), padding: "5%", paddingRight: "20px", display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box" }}>
-          <div style={{ ...inkSolid, flexShrink: 0, fontFamily: t.fontBody, fontSize: "clamp(11px,1.5vw,15px)", letterSpacing: "1.5px", marginBottom: "4%" }}>SURVIVAL JOURNAL</div>
+        <div style={{ ...zoneStyle(m(JOURNAL_ZONE)), padding: "5%", paddingRight: px(TYPE.journalPadRight, 12), display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box" }}>
+          <div style={{ ...inkSolid, flexShrink: 0, fontFamily: t.fontBody, fontSize: px(TYPE.journalHead, 9), letterSpacing: px(TYPE.journalHeadLs), marginBottom: "4%" }}>SURVIVAL JOURNAL</div>
           <div style={{ display: "flex", flexDirection: "column", flexShrink: 0, gap: "3%", overflow: "hidden" }}>
             {lines.map((line, i) => (
               <p
@@ -225,7 +340,7 @@ export default function NotebookHome({ best, played, ach, endingsFound, onPlay, 
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
                   fontFamily: t.fontHand,
-                  fontSize: "clamp(13px,1.8vw,18px)",
+                  fontSize: px(TYPE.journalLine, 11),
                   lineHeight: 1.3,
                 }}
               >
@@ -234,6 +349,49 @@ export default function NotebookHome({ best, played, ach, endingsFound, onPlay, 
             ))}
           </div>
         </div>
+      </>
+    );
+  };
+
+  if (stacked) {
+    // Portrait phones: the two page halves stacked, capped so a landscape
+    // phone that trips the breakpoint doesn't render them enormous. The
+    // page pair is taller than most phone viewports — that's fine, the
+    // screen scrolls like the rest of the app.
+    return (
+      <div style={{ width: "100%", display: "flex", justifyContent: "center", padding: "6px 0" }}>
+        <div ref={ref} style={{ width: "min(100%, 480px)", display: "flex", flexDirection: "column", gap: "10px", animation: "bdhFadeUp .5s ease both" }}>
+          <PageHalf side="left">{leftPage(toHalf("left"))}</PageHalf>
+          <PageHalf side="right">{rightPage(toHalf("right"))}</PageHalf>
+        </div>
+      </div>
+    );
+  }
+
+  // Width is normally height-fit (86vh at the artwork's aspect) so the whole
+  // spread sits in view; the max() keeps a short-but-wide window (landscape
+  // phone, half-height desktop window) from crushing it below 640px — past
+  // that point legible type matters more than fitting vertically, and the
+  // page scrolls instead.
+  return (
+    <div style={{ width: "100%", display: "flex", justifyContent: "center", padding: "6px 0" }}>
+      <div
+        ref={ref}
+        style={{
+          position: "relative",
+          width: "min(100%, 1150px, max(640px, calc(86vh * 1024 / 682)))",
+          aspectRatio: "1024 / 682",
+          animation: "bdhFadeUp .5s ease both",
+        }}
+      >
+        <img
+          src="/notebook-home.jpg"
+          alt={IMG_ALT}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "fill", userSelect: "none", pointerEvents: "none" }}
+          draggable={false}
+        />
+        {leftPage(identity)}
+        {rightPage(identity)}
       </div>
     </div>
   );
