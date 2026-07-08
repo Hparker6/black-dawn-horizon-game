@@ -1,5 +1,92 @@
+import { useState } from "react";
 import * as t from "../styles/tokens.js";
-import { INTRO_SCREENS, ROUTE_CHOICE } from "../data/intro.js";
+import { INTRO_SCREENS } from "../data/intro.js";
+import RouteSelect from "./RouteSelect.jsx";
+
+const LEAVE_MS = 500;
+
+// A one-off cinematic beat, not a journal page — the artwork is the entire
+// visual focus, so this deliberately shares none of AtmosphereScreen's
+// chrome (no RECOVERED LOG header, no skip link, no ruled dividers). The
+// panel it renders into is normally paper-colored (DangerAtmosphere.jsx);
+// this fills that same flex slot with the app's own outer dark gradient
+// instead, so for this one beat the "page" reads as a dark, cinematic frame
+// rather than a page in the journal. Advances on click/tap anywhere, but
+// not instantly — `leaving` plays a brief page-turn-out first (see
+// bdhPageTurnOut in index.css) and onContinue only fires once it's done.
+function LeavingHomeScreen({ screen, onContinue }) {
+  const [leaving, setLeaving] = useState(false);
+
+  const advance = () => {
+    if (leaving) return;
+    setLeaving(true);
+    setTimeout(onContinue, LEAVE_MS);
+  };
+
+  return (
+    <div
+      onClick={advance}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") advance();
+      }}
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "22px",
+        padding: "24px",
+        cursor: "pointer",
+        background: t.bgGradient,
+        transformOrigin: "right center",
+        animation: leaving ? `bdhPageTurnOut ${LEAVE_MS}ms ease-in forwards` : "bdhOverlay .5s ease both",
+      }}
+    >
+      {/* Sized to the image's own rendered box (inline-block shrink-wraps
+          to it), so the text overlay below can anchor to the art's actual
+          visible edges instead of guessing at letterboxed empty space. */}
+      <div style={{ position: "relative", display: "inline-block", maxWidth: "94%" }}>
+        <img
+          src={screen.image}
+          alt={screen.imageAlt}
+          draggable={false}
+          style={{
+            display: "block",
+            maxWidth: "100%",
+            maxHeight: "72vh",
+            width: "auto",
+            height: "auto",
+            objectFit: "contain",
+            boxShadow: "0 30px 70px -20px rgba(0,0,0,.75)",
+            userSelect: "none",
+          }}
+        />
+        <div style={{ position: "absolute", left: "6%", bottom: "9%", width: "clamp(280px,38vw,420px)", maxWidth: "82%" }}>
+          {screen.journal.map((line, i) => (
+            <p
+              key={i}
+              style={{
+                margin: i === 0 ? 0 : "10px 0 0",
+                fontFamily: t.fontHand,
+                fontWeight: 500,
+                fontSize: "clamp(16px,2.1vw,21px)",
+                lineHeight: 1.6,
+                color: "#f4efe4",
+                textShadow: "0 2px 6px rgba(0,0,0,.85), 0 1px 12px rgba(0,0,0,.6)",
+              }}
+            >
+              {line}
+            </p>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontSize: "11px", letterSpacing: "1px", color: "rgba(244,239,228,.5)" }}>Click anywhere to continue</div>
+    </div>
+  );
+}
 
 // A recovered-log page: same hairline-divider/centered-block composition as
 // Title.jsx, so the intro reads as part of the same journal rather than a
@@ -44,46 +131,6 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
   );
 }
 
-function RouteChoiceScreen({ onChooseRoute }) {
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "44px 30px 34px", animation: "bdhFadeUp .5s ease both" }}>
-      <div style={{ fontSize: "11px", letterSpacing: "3px", color: t.muted, textAlign: "center" }}>RECOVERED LOG</div>
-      <div style={{ height: "1px", background: t.borderSubtle, margin: "14px 0 auto" }} />
-      <div style={{ textAlign: "center", margin: "auto 0", maxWidth: "440px", alignSelf: "center" }}>
-        {ROUTE_CHOICE.body.map((line, i) => (
-          <p key={i} style={{ fontFamily: t.fontDisplay, fontSize: "22px", color: t.ink, lineHeight: 1.3, letterSpacing: ".5px", margin: i === 0 ? 0 : "12px 0 0" }}>
-            {line}
-          </p>
-        ))}
-      </div>
-      <div style={{ height: "1px", background: t.borderSubtle, margin: "auto 0 20px" }} />
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {ROUTE_CHOICE.options.map((opt) => (
-          <button
-            key={opt.flag}
-            onClick={() => onChooseRoute(opt.flag)}
-            className="bdh-press"
-            style={{
-              width: "100%",
-              textAlign: "left",
-              border: `1px solid ${t.ink}`,
-              cursor: "pointer",
-              background: t.paper,
-              boxShadow: "0 2px 0 #1a1a1a",
-              borderRadius: "2px",
-              padding: "14px 16px",
-              fontFamily: t.fontBody,
-            }}
-          >
-            <div style={{ fontSize: "15px", color: t.ink, letterSpacing: ".3px" }}>&rsaquo; {opt.label}</div>
-            <div style={{ fontSize: "12px", color: t.muted, fontStyle: "italic", marginTop: "4px" }}>{opt.detail}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // step < INTRO_SCREENS.length: atmosphere beats, tap to advance.
 // step === INTRO_SCREENS.length: the route choice, the intro's last beat.
 // seenIntro-and-not-skipped players land straight on step===INTRO_SCREENS.length
@@ -91,7 +138,11 @@ function RouteChoiceScreen({ onChooseRoute }) {
 // choice itself is never skipped — it's a real per-run decision, not lore.
 export default function Intro({ step, onContinue, onSkip, onChooseRoute }) {
   if (step < INTRO_SCREENS.length) {
-    return <AtmosphereScreen screen={INTRO_SCREENS[step]} onContinue={onContinue} onSkip={onSkip} showSkip />;
+    const screen = INTRO_SCREENS[step];
+    if (screen.type === "image") {
+      return <LeavingHomeScreen screen={screen} onContinue={onContinue} />;
+    }
+    return <AtmosphereScreen screen={screen} onContinue={onContinue} onSkip={onSkip} showSkip />;
   }
-  return <RouteChoiceScreen onChooseRoute={onChooseRoute} />;
+  return <RouteSelect onChooseRoute={onChooseRoute} />;
 }
