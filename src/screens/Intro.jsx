@@ -133,9 +133,9 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
 
 // step < INTRO_SCREENS.length: atmosphere beats, tap to advance.
 // step === INTRO_SCREENS.length: the route choice, the intro's last beat.
-// seenIntro-and-not-skipped players land straight on step===INTRO_SCREENS.length
-// (see App.jsx's onPlay) so they never re-read the atmosphere text, but the
-// choice itself is never skipped — it's a real per-run decision, not lore.
+// The atmosphere beats play at the start of every run (SKIP INTRO on the
+// lore page is the one shortcut past them); the route choice is never
+// skipped — it's a real per-run decision, not lore.
 export default function Intro({ step, onContinue, onSkip, onChooseRoute }) {
   if (step < INTRO_SCREENS.length) {
     const screen = INTRO_SCREENS[step];

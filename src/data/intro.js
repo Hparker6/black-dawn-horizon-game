@@ -1,18 +1,32 @@
-// Short atmospheric beats shown once (per engine/save.js's seenIntro flag)
-// before a run's first draft round. Each screen is one recovered-log entry
-// — terse, present tense, second person — advanced only by a deliberate
-// tap (see screens/Intro.jsx), same rule as everything else in this game.
-// The route choice is the last beat, not part of this array, since it
-// renders as two buttons instead of a tap-anywhere continue.
+// Short atmospheric beats shown at the start of every run, before the route
+// choice. Each screen is one recovered-log entry — terse, present tense,
+// second person — advanced only by a deliberate tap (see screens/Intro.jsx),
+// same rule as everything else in this game. The route choice is the last
+// beat, not part of this array, since it renders as two buttons instead of
+// a tap-anywhere continue.
+//
+// Exactly two beats, by design: outbreak lore, then the leaving-home
+// cinematic — so BEGIN -> lore -> image -> route choice is three pages
+// total. The lore beat carries both the outbreak (what happened) and the
+// coast-guard rumor (why you're driving toward the coast), which used to be
+// two separate text pages.
 //
 // `type` picks which screen component renders it (Intro.jsx): 'text'
-// (default, omitted on the two original entries) gets the shared
-// journal-page chrome (RECOVERED LOG header, skip link, ruled dividers).
-// 'image' is a one-off full-bleed cinematic beat — its own component, no
-// shared chrome at all — so it can't accidentally inherit paper-page
-// styling meant for plain text beats.
+// (default, omitted on the lore entry) gets the shared journal-page chrome
+// (RECOVERED LOG header, skip link, ruled dividers). 'image' is a one-off
+// full-bleed cinematic beat — its own component, no shared chrome at all —
+// so it can't accidentally inherit paper-page styling meant for plain text
+// beats.
 export const INTRO_SCREENS = [
-  { body: ["Three weeks since the grid failed.", "The city didn't take it well."] },
+  {
+    body: [
+      "Three weeks since the outbreak.",
+      "The grid failed. The cities fell.",
+      "The dead didn't stay dead.",
+      "They say the coast guard station still runs — lights, a working radio, maybe a way out.",
+      "Maybe.",
+    ],
+  },
   {
     type: "image",
     title: "Leaving Home",
@@ -20,7 +34,6 @@ export const INTRO_SCREENS = [
     imageAlt: "A farmhouse at dusk seen from a loaded pickup truck's tailgate, fires burning on the horizon down the road ahead.",
     journal: ["I waited longer than I should have.", "There's nothing left here now.", "If the coast is still standing...", "it's my last chance."],
   },
-  { body: ["They say the coast guard station still runs — lights, a working radio, maybe a way out.", "Maybe."] },
 ];
 
 // The run-shaping choice that ends the intro — rendered by screens/
