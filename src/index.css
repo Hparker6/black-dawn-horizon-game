@@ -30,18 +30,52 @@ body {
     opacity: 1;
   }
 }
-/* Intro.jsx's "Leaving Home" cinematic beat: hinges from the right edge
-   (transform-origin set on the element itself) like a page lifting and
-   turning away to reveal what's next, rather than a flat cross-fade — kept
-   brief and modest in angle so it reads as a page turn, not a slide/wipe. */
-@keyframes bdhPageTurnOut {
+/* Page turn (components/PageTurner.jsx): the outgoing page hinges from the
+   left spine like a physical sheet — a slight skew as it lifts is the
+   "curl", the shade/uncover pair below are the two shadows a real turning
+   page produces (on its own face as it tilts from the light, and cast onto
+   the page it reveals), and bdhCameraPush is a subtle 2.5% camera move-in
+   on the whole book while the sheet is airborne. Transform/opacity only —
+   these all run on the compositor. */
+@keyframes bdhPageTurnAway {
   0% {
+    transform: perspective(1800px) rotateY(0deg) skewY(0deg);
     opacity: 1;
-    transform: perspective(1400px) rotateY(0deg);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: perspective(1800px) rotateY(-72deg) skewY(-1.5deg);
+    opacity: 0;
+  }
+}
+@keyframes bdhPageTurnShade {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+@keyframes bdhPageUncover {
+  0% {
+    opacity: 0.42;
   }
   100% {
     opacity: 0;
-    transform: perspective(1400px) rotateY(-24deg);
+  }
+}
+@keyframes bdhCameraPush {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.025);
   }
 }
 @keyframes bdhSlip {
