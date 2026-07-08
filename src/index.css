@@ -343,6 +343,27 @@ body {
   box-shadow: none;
 }
 
+/* SurvivalTip.jsx's taped note: click-navigable (left half back, right half
+   forward) but must read as a real note sitting on the page, not a UI
+   control — no arrow icons, no border, no fill change on hover. The only
+   feedback is a faint press (paper physically nudged) on click/tap, and a
+   soft warm glow on keyboard focus only (:focus-visible, never on mouse
+   click) so keyboard users still get an indicator without a blue browser
+   outline breaking the photo's illusion.  */
+.bdh-tip-note {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  transition: transform 0.12s ease;
+}
+.bdh-tip-note:active {
+  transform: scale(0.97);
+}
+.bdh-tip-note:focus-visible {
+  box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.35);
+  border-radius: 2px;
+}
+
 /* Field-note margin scrap (App.jsx's event screen): only shown once the
    panel is wide enough to have real gutter space beside the reading
    column — below that width the column fills the panel and there's
