@@ -1,0 +1,17 @@
+{
+  "name": "Black Dawn Horizon",
+  "short_name": "Black Dawn",
+  "description": "A free browser zombie survival game where every decision shapes your story. Draft your survivor, choose your route, and discover who you become.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#20180d",
+  "theme_color": "#20180d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
