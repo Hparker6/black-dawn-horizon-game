@@ -43,13 +43,18 @@ export default function DiceOverlay({ show, dice, onContinue }) {
         )}
         {done && (
           <div>
-            <div style={{ display: "flex", justifyContent: "center", gap: "10px", fontSize: "13px", color: t.muted, margin: "2px 0 4px" }}>
-              <span>ROLL {dice.roll || 0}</span>
-              <span style={{ color: t.borderSubtle }}>+</span>
-              <span>
-                {dice.label} +{dice.bonus || 0}
-              </span>
-            </div>
+            {/* Survivor identity grants no stat bonuses, so this breakdown
+                row only appears if a bonus ever exists again — a bare d10
+                shouldn't display a "+0" that implies a number to chase. */}
+            {(dice.bonus || 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "center", gap: "10px", fontSize: "13px", color: t.muted, margin: "2px 0 4px" }}>
+                <span>ROLL {dice.roll || 0}</span>
+                <span style={{ color: t.borderSubtle }}>+</span>
+                <span>
+                  {dice.label} +{dice.bonus || 0}
+                </span>
+              </div>
+            )}
             {dice.contributors && dice.contributors.length > 0 && (
               <div style={{ fontSize: "10px", letterSpacing: ".5px", color: t.goldDark, marginBottom: "10px" }}>
                 {dice.contributors.map((c, i) => (

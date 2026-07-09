@@ -402,6 +402,22 @@ body {
   transform: scale(1.01);
 }
 
+/* Survivor identity draft cards (screens/Draft.jsx): each taped-in sketch
+   sits at its own slight tilt (inline transform), so hover must not stomp
+   that — the class only adds lift via filter/shadow, never transform.
+   Disabled (after a pick) cards lose hover via :not(:disabled), same
+   pattern as the route cards above. */
+.bdh-id-card {
+  -webkit-tap-highlight-color: transparent;
+}
+.bdh-id-card:hover:not(:disabled) {
+  filter: brightness(1.04);
+  box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.45) !important;
+}
+.bdh-id-card:active:not(:disabled) {
+  filter: brightness(0.99);
+}
+
 /* Field-note margin scrap (App.jsx's event screen): only shown once the
    panel is wide enough to have real gutter space beside the reading
    column — below that width the column fills the panel and there's

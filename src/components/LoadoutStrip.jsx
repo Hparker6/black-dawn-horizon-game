@@ -1,42 +1,48 @@
 import { useState } from "react";
 import * as t from "../styles/tokens.js";
 import { routeModifier } from "../engine/pacing.js";
+import { TRAIT_LABELS } from "../data/survivor.js";
 
-function itemTag(item, i, showTrait) {
-  const rc = t.rarityColors(item.rarity);
+// One accent per identity slot — weapon reads dangerous, companion reads
+// alive, keepsake reads precious — so the strip mirrors the same color
+// language the draft pages and choice badges use. Never color alone: the
+// expanded view names the slot in words.
+const KIND_COLOR = { weapon: t.blood, companion: t.green, keepsake: t.goldDark };
+const KIND_LABEL = { weapon: "WEAPON", companion: "COMPANION", keepsake: "KEEPSAKE" };
+
+function pieceTag(item, i, expanded) {
+  const c = KIND_COLOR[item.kind] || t.muted;
+  const traitLabels = (item.traits || []).map((tr) => TRAIT_LABELS[tr] || tr).join(" · ");
   return (
     <span
       key={i}
-      title={item.name + (item.trait ? ` — ${item.trait}` : "")}
+      title={`${KIND_LABEL[item.kind] || ""}: ${item.name}${traitLabels ? ` — ${traitLabels}` : ""}`}
       style={{
         fontSize: "10px",
         letterSpacing: ".3px",
-        color: rc.text,
-        border: `1px solid ${rc.border}`,
-        background: rc.bg,
+        color: c,
+        border: `1px solid ${c}`,
         borderRadius: "2px",
         padding: "3px 7px",
-        boxShadow: item.rarity === "jackpot" || item.rarity === "ultra" ? `0 0 4px 1px ${rc.border}` : "none",
+        background: "rgba(255,252,244,.5)",
         whiteSpace: "nowrap",
       }}
     >
+      {expanded ? `${KIND_LABEL[item.kind]} · ` : ""}
       {item.name}
-      {showTrait && item.trait ? ` · ${item.trait}` : ""}
+      {expanded && traitLabels ? ` · ${traitLabels}` : ""}
     </span>
   );
 }
 
 // Persistent but quiet: a slim strip docked to the bottom of the panel
 // (outside the reading column, so it never competes with the story) —
-// always shows the carried items as actual readable, rarity-colored name
-// tags (not abstract dots), so a player can see at a glance what's in a
-// trait-gated choice's way. Collapsed by default: names only, wrapping onto
-// a second line at narrow widths. Expanded adds each item's trait, so the
-// player can tie a locked choice's "REQUIRES X" badge back to which
-// specific item would unlock it. `route` (the intro's highway/backroads
-// flag, see data/intro.js) shows here too — a small label, not a mechanic
-// explainer, so the choice reads as "this is still shaping the run" without
-// spelling out the actual weighting.
+// shows WHO this run is (the three drafted identity pieces) as readable,
+// slot-colored name tags. Collapsed: names only. Expanded: each piece's
+// slot plus the capability labels it brings (so a locked "REQUIRES Pry
+// Open" badge upstream can be traced back to which pick would satisfy it).
+// `route` (the intro's highway/backroads flag) shows here too — a small
+// label, not a mechanic explainer.
 export default function LoadoutStrip({ loadout, route }) {
   const [expanded, setExpanded] = useState(false);
   if (!loadout || loadout.length === 0) return null;
@@ -71,8 +77,8 @@ export default function LoadoutStrip({ loadout, route }) {
             {routeLabel}
           </span>
         )}
-        <span style={{ fontSize: "9px", letterSpacing: "1.5px", color: t.rankMuted, marginRight: "2px" }}>LOADOUT</span>
-        {loadout.map((item, i) => itemTag(item, i, expanded))}
+        <span style={{ fontSize: "9px", letterSpacing: "1.5px", color: t.rankMuted, marginRight: "2px" }}>THE SURVIVOR</span>
+        {loadout.map((item, i) => pieceTag(item, i, expanded))}
         <span style={{ fontSize: "9px", color: t.rankMuted, marginLeft: "2px" }}>{expanded ? "▲" : "▼"}</span>
       </button>
     </div>

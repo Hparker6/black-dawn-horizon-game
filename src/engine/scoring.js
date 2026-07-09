@@ -12,6 +12,14 @@ export function tier({ died, day }) {
   return tierFor(day);
 }
 
+// "Against the Odds" threshold: a check whose effective needed is at least
+// this counts as a clutch roll. Was 10 back when drafted items granted stat
+// bonuses; the Survivor Identity rebalance (see data/events.js) recentered
+// every check for a bonus-less d10, so the hardest roll in the game is now
+// the final gauntlet's 7 — the medal tracks that same "hardest roll there
+// is" meaning rather than a number nothing can reach anymore.
+export const CLUTCH_NEEDED = 7;
+
 // Mirrors the achievement-unlock block inside finish(). `endingId` is the
 // stable id (data/endings.js: ENDINGS[].id) — NOT the display label — so
 // renaming "Military Rescue" can never silently break the "rescue" medal.

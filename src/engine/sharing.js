@@ -7,15 +7,15 @@ export const SHARE_LABEL_SHARED = "SHARED ✓";
 export const SHARE_LABEL_COPIED = "COPIED — PASTE IT ANYWHERE";
 export const SHARE_LABEL_RESET_MS = 1800;
 
-// Spoiler-free: day count, tier, ending label, and equipment names only —
-// never the run's event log/choices. The URL is appended in the text itself
-// (not just passed via navigator.share's `url` field) because not every
-// share target honors separate fields — Messages/WhatsApp/etc. all read the
-// text body directly.
+// Spoiler-free: day count, tier, ending label, and the survivor's identity
+// (weapon · companion · keepsake) only — never the run's event log/choices.
+// The URL is appended in the text itself (not just passed via
+// navigator.share's `url` field) because not every share target honors
+// separate fields — Messages/WhatsApp/etc. all read the text body directly.
 export function buildShareText({ day, died, ending, loadout }) {
   const endingLabel = ending || (died ? "Died on the road" : "Reached the coast");
-  const items = (loadout || []).map((it) => it.name).join(", ");
-  const loadoutLine = items ? ` Loadout: ${items}.` : "";
+  const items = (loadout || []).map((it) => it.name).join(" · ");
+  const loadoutLine = items ? ` I was: ${items}.` : "";
   return (
     `BLACK DAWN HORIZON — I survived ${day} days (${tier({ died, day })}).\n` +
     `Ending: ${endingLabel}.${loadoutLine}\n` +

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import * as t from "./styles/tokens.js";
-import { DRAFT } from "./data/items.js";
+import { SURVIVOR_SLOTS } from "./data/survivor.js";
 import { EVENTS } from "./data/events.js";
 import { diff } from "./engine/difficulty.js";
-import { shuffleFour, applyCardPick, contributorsForStat } from "./engine/draft.js";
-import { rollD10, resolveCheck, applyResult, pickNextEvent } from "./engine/events.js";
+import { contributorsForStat, shuffleFour } from "./engine/draft.js";
+import { addFlags } from "./engine/flags.js";
+import { rollD10, resolveCheck, applyResult, pickNextEvent, resolveOutcome, identityFlavorFor } from "./engine/events.js";
 import { isSignificantSetback, routeFromFlags, routeModifier, routeFlavorFor } from "./engine/pacing.js";
-import { tier, unlockAchievements } from "./engine/scoring.js";
+import { tier, unlockAchievements, CLUTCH_NEEDED } from "./engine/scoring.js";
 import { ENDINGS, SECRET_ENDINGS, endingLabel } from "./data/endings.js";
 import { INTRO_SCREENS } from "./data/intro.js";
 import { shareRun, SHARE_LABEL_DEFAULT, SHARE_LABEL_SHARED, SHARE_LABEL_COPIED, SHARE_LABEL_RESET_MS } from "./engine/sharing.js";
@@ -34,7 +35,6 @@ import EndingsCollection from "./screens/EndingsCollection.jsx";
 // The source has no settings UI, so they're pinned here as constants —
 // per the porting brief, defaults match the original's declared defaults.
 const DIFFICULTY = "Balanced"; // Merciful | Balanced | Brutal
-const DRAFT_LAYOUT = "Grid Compare"; // Grid Compare | Fanned Hand | Pack Reveal
 const REDUCE_MOTION = false;
 
 // Draft "rolling" duration: long enough for the shuffle animation in
@@ -42,6 +42,8 @@ const REDUCE_MOTION = false;
 // the phase flips to "revealed". Shortened under reduceMotion to a quick
 // settle rather than the full shuffle.
 const ROLL_DELAY_MS = REDUCE_MOTION ? 300 : 1350;
+// How long the TAKEN stamp holds before the next identity page (or the run)
+// arrives — same beat as the original item draft.
 const PICK_DELAY_MS = 620;
 const DICE_TICK_MS = REDUCE_MOTION ? 260 : 65;
 const DICE_TOTAL_MS = REDUCE_MOTION ? 320 : 700;
@@ -68,10 +70,23 @@ function initialState() {
     seenIntro: false,
     introStep: 0,
     draftRound: 0,
+    // Slot-machine identity draft: each round ROLLS 4 of the slot's 8
+    // pieces (idle -> rolling -> revealed, see Draft.jsx), and one respin
+    // is shared across the whole playthrough.
     draftPhase: "idle",
     draftCards: [],
-    pickedId: null,
     respins: 1,
+    pickedId: null,
+    // Survivor identity (Sprint 1): one weapon, one companion, one keepsake
+    // — the full data/survivor.js objects, chosen on the three draft pages.
+    // No stats anywhere; identity expresses itself through traits (below),
+    // requiredWeapon/-Companion/-Keepsake choice gating (see classifyChoices
+    // in engine/events.js), and the weapon_/companion_/keepsake_ flags
+    // stamped into `flags` at pick time.
+    identity: { weapon: null, companion: null, keepsake: null },
+    // stats stay in state (and resolveCheck still reads them) but nothing
+    // grants points anymore — every check is a bare d10 against a `needed`
+    // recentered for exactly that (see the rebalance note in data/events.js).
     stats: { combat: 0, survival: 0, wits: 0 },
     traits: [],
     loadout: [],
@@ -178,8 +193,9 @@ export default function App() {
       draftRound: 0,
       draftPhase: "idle",
       draftCards: [],
-      pickedId: null,
       respins: 1,
+      pickedId: null,
+      identity: { weapon: null, companion: null, keepsake: null },
       stats: { combat: 0, survival: 0, wits: 0 },
       traits: [],
       loadout: [],
@@ -222,13 +238,12 @@ export default function App() {
     setState((prev) => ({ ...prev, tab: "survival", screen: "title", showDice: false, dice: null, reacting: false, reaction: null }));
   };
 
-  // The actual 4 cards are decided immediately (not at the end of the delay)
-  // so Draft.jsx's shuffle animation can cycle toward the real outcome and
-  // have each slot settle on it before "revealed" flips — no last-instant
-  // swap once the phase transitions.
+  // The actual 4 offered pieces are decided immediately (not at the end of
+  // the delay) so Draft.jsx's shuffle animation can cycle toward the real
+  // outcome and have each slot settle on it before "revealed" flips.
   const onRoll = () => {
     if (state.draftPhase !== "idle") return;
-    const draftCards = shuffleFour(DRAFT[state.draftRound].cards);
+    const draftCards = shuffleFour(SURVIVOR_SLOTS[state.draftRound].items);
     setState((prev) => ({ ...prev, draftPhase: "rolling", draftCards }));
     setTimeout(() => {
       setState((prev) => ({ ...prev, draftPhase: "revealed" }));
@@ -236,32 +251,46 @@ export default function App() {
   };
 
   const onReroll = () => {
-    if (state.draftPhase !== "revealed" || state.respins <= 0) return;
-    const draftCards = shuffleFour(DRAFT[state.draftRound].cards);
+    if (state.draftPhase !== "revealed" || state.respins <= 0 || state.pickedId) return;
+    const draftCards = shuffleFour(SURVIVOR_SLOTS[state.draftRound].items);
     setState((prev) => ({ ...prev, draftPhase: "rolling", respins: prev.respins - 1, draftCards }));
     setTimeout(() => {
       setState((prev) => ({ ...prev, draftPhase: "revealed" }));
     }, ROLL_DELAY_MS);
   };
 
-  const onPickCard = (card) => {
-    if (state.pickedId) return;
-    trackEvent("draft_card_selected", {
-      round: state.draftRound + 1,
-      category: DRAFT[state.draftRound].cat,
-      card_id: card.id,
-      card_name: card.name,
-      trait: card.trait || "none",
+  // Survivor identity pick: fires when one of the 4 rolled cards is tapped.
+  // The pick itself is pure accumulation — the chosen piece lands in
+  // `identity`, its capability traits join `traits` (same strings the
+  // event data's requiredTrait already gates on), a display entry joins
+  // `loadout` (Results/share/strip), and a `<slot>_<id>` flag joins `flags`
+  // so keepsake-gated rare events and secret endings can key off the pick
+  // with the existing requiresFlags machinery. No stats, ever.
+  const onPickIdentity = (item) => {
+    if (state.pickedId || state.draftPhase !== "revealed") return;
+    const slot = SURVIVOR_SLOTS[state.draftRound];
+    trackEvent("survivor_drafted", {
+      slot: slot.key,
+      page: state.draftRound + 1,
+      piece_id: item.id,
+      piece_name: item.name,
+      rarity: item.rarity || "common",
+      traits: (item.traits || []).join(",") || "none",
     });
-    setState((prev) => ({ ...prev, pickedId: card.id }));
+    setState((prev) => ({ ...prev, pickedId: item.id }));
     setTimeout(() => {
       // Branch decision + firstEvent read from stateRef (not inside the
       // setState updater below) so pickNextEvent/trackEvent — a side effect
       // — never risks running twice under StrictMode's dev-only
       // double-invocation of updater functions. Same pattern as startDice.
       const cur = stateRef.current;
-      const updated = applyCardPick(cur, card);
-      if (cur.draftRound < DRAFT.length - 1) {
+      const updated = {
+        identity: { ...cur.identity, [slot.key]: item },
+        traits: [...cur.traits, ...(item.traits || [])],
+        loadout: [...cur.loadout, { id: item.id, name: item.name, kind: slot.key, traits: item.traits || [] }],
+        flags: addFlags(cur.flags, [`${slot.key}_${item.id}`]),
+      };
+      if (cur.draftRound < SURVIVOR_SLOTS.length - 1) {
         setState((prev) => ({ ...prev, draftRound: prev.draftRound + 1, draftPhase: "idle", draftCards: [], pickedId: null, ...updated }));
         return;
       }
@@ -270,14 +299,15 @@ export default function App() {
       // a highway run is a genuinely shorter checklist, backroads genuinely
       // longer, compounding with the other two levers instead of leaving
       // run length to those alone.
-      const { eventCountDelta } = routeModifier(routeFromFlags(cur.flags));
+      const { eventCountDelta } = routeModifier(routeFromFlags(updated.flags));
       const targetMin = MIN_RUN_EVENTS + eventCountDelta;
       const targetMax = MAX_RUN_EVENTS + eventCountDelta;
       const runEventsTarget = targetMin + Math.floor(Math.random() * (targetMax - targetMin + 1));
-      // cur.flags (not []) — carries the intro's route choice (onChooseRoute,
-      // set before the draft even started) through to the very first
-      // pickNextEvent call, so route affects event weighting from event 1.
-      const firstEvent = pickNextEvent({ allEvents: EVENTS, usedIds: [], flags: cur.flags, remainingSlots: runEventsTarget, runEventsTarget, reliefBias: false });
+      // updated.flags (not [] and not cur.flags) — carries the intro's route
+      // choice AND all three identity flags (including the keepsake just
+      // picked a moment ago) into the very first pickNextEvent call, so
+      // route weighting and keepsake-gated rare events are live from event 1.
+      const firstEvent = pickNextEvent({ allEvents: EVENTS, usedIds: [], flags: updated.flags, remainingSlots: runEventsTarget, runEventsTarget, reliefBias: false });
       trackEvent("event_seen", {
         event_id: firstEvent.id,
         event_number: 1,
@@ -296,9 +326,9 @@ export default function App() {
         ...updated,
         day: 0,
         log: [],
-        // flags NOT reset here — it already holds only the route flag (set
-        // by onChooseRoute before the draft began; nothing in the draft
-        // itself touches flags), and needs to survive into the run.
+        // flags NOT reset here — `updated.flags` carries the route flag from
+        // the intro plus the three identity flags stamped by the draft, and
+        // all of it needs to survive into the run.
         characterProfile: createProfile(),
         shownReflectionTiers: [],
         reflection: null,
@@ -333,16 +363,20 @@ export default function App() {
       startDice(choice, curEvent);
       return;
     }
-    const applied = applyResult(state, choice.result, DIFFICULTY, SECRET_ENDINGS);
+    // Identity may swap in an alternate outcome for this same choice (see
+    // resolveOutcome in engine/events.js) — resolved once here so the
+    // applied result, the reaction card, and analytics all agree on it.
+    const outcome = resolveOutcome(choice, state.identity).result;
+    const applied = applyResult(state, outcome, DIFFICULTY, SECRET_ENDINGS);
     const characterProfile = applyChoiceImpact(state.characterProfile, choice.characterImpact);
     const midRun = choice.characterImpact ? checkMidRunReflection(characterProfile, state.shownReflectionTiers) : null;
     trackEvent("choice_selected", {
       event_id: curEvent.id,
       event_title: curEvent.title,
       choice_text: choice.text,
-      choice_kind: choice.requiredTrait ? "trait" : "plain",
+      choice_kind: choice.requiredWeapon ? "weapon" : choice.requiredCompanion ? "companion" : choice.requiredKeepsake ? "keepsake" : choice.requiredTrait ? "trait" : "plain",
       resulted_in_death: applied.died,
-      set_flags: choice.result.setFlags || [],
+      set_flags: outcome.setFlags || [],
     });
     trackEvent("event_completed", {
       event_id: curEvent.id,
@@ -358,13 +392,13 @@ export default function App() {
       endingId: applied.endingId,
       gameOver: applied.gameOver,
       flags: applied.flags,
-      lastSetback: isSignificantSetback({ health: choice.result.health, success: true }),
+      lastSetback: isSignificantSetback({ health: outcome.health, success: true }),
       log: [...prev.log, applied.logEntry],
       characterProfile,
       shownReflectionTiers: midRun ? [...prev.shownReflectionTiers, midRun.key] : prev.shownReflectionTiers,
       reflection: midRun ? midRun.text : null,
       reacting: true,
-      reaction: choice.result,
+      reaction: outcome,
     }));
   };
 
@@ -381,7 +415,11 @@ export default function App() {
       // StrictMode's dev-only double-invocation of updater functions.
       const cur = stateRef.current;
       const { roll, bonus, needed, total, success } = resolveCheck(choice.check, cur.stats, DIFFICULTY);
-      const res = success ? choice.success : choice.fail;
+      // Identity may swap in alternate success/fail outcomes for this same
+      // check (see resolveOutcome in engine/events.js) — the roll decides
+      // WHICH branch, identity decides what that branch actually is.
+      const outcome = resolveOutcome(choice, cur.identity);
+      const res = success ? outcome.success : outcome.fail;
       const applied = applyResult(cur, res, DIFFICULTY, SECRET_ENDINGS);
       const characterProfile = applyChoiceImpact(cur.characterProfile, choice.characterImpact);
       const midRun = choice.characterImpact ? checkMidRunReflection(characterProfile, cur.shownReflectionTiers) : null;
@@ -415,7 +453,7 @@ export default function App() {
         shownReflectionTiers: midRun ? [...prev.shownReflectionTiers, midRun.key] : prev.shownReflectionTiers,
         reflection: midRun ? midRun.text : null,
         dice: { phase: "done", roll, bonus, total, needed, success, label: choice.check.label, contributors, msg: res.msg, tag: res.tag },
-        runClutch: prev.runClutch || (success && needed >= 10),
+        runClutch: prev.runClutch || (success && needed >= CLUTCH_NEEDED),
         runFailed: prev.runFailed || !success,
       }));
     }, DICE_TOTAL_MS);
@@ -502,6 +540,11 @@ export default function App() {
       died: snapshot.died,
       difficulty: DIFFICULTY,
       route,
+      // Survivor identity — so the dashboard can slice days/endings by who
+      // the player chose to be, which is the whole hypothesis of Sprint 1.
+      weapon: (snapshot.identity.weapon || {}).id || null,
+      companion: (snapshot.identity.companion || {}).id || null,
+      keepsake: (snapshot.identity.keepsake || {}).id || null,
       is_new_best: snapshot.day > snapshot.best,
       new_achievements: newAch,
       new_ending: newEnding,
@@ -544,6 +587,11 @@ export default function App() {
   // then only part of the time, so it reads as commentary on this specific
   // beat rather than a banner repeated on every screen.
   const routeFlavor = routeFlavorFor(routeFromFlags(state.flags), currentEvent.type, currentEvent.id);
+  // Identity flavor (engine/events.js): the scene as this build perceives
+  // it — only ever non-null when the event authored a line for a piece this
+  // run actually carries. Rendered above the route flavor since it's about
+  // the scene itself, not the road around it.
+  const identityFlavor = identityFlavorFor(currentEvent, state.identity);
 
   return (
     <div
@@ -603,17 +651,14 @@ export default function App() {
               {state.screen === "spin" && (
                 <Draft
                   round={state.draftRound}
-                  totalRounds={DRAFT.length}
-                  category={DRAFT[state.draftRound]}
                   respins={state.respins}
                   phase={state.draftPhase}
                   cards={state.draftCards}
                   pickedId={state.pickedId}
-                  layout={DRAFT_LAYOUT}
                   reduceMotion={REDUCE_MOTION}
                   onRoll={onRoll}
                   onReroll={onReroll}
-                  onPickCard={onPickCard}
+                  onPickCard={onPickIdentity}
                 />
               )}
               {state.screen === "event" && (
@@ -690,9 +735,11 @@ export default function App() {
                         event={currentEvent}
                         traits={state.traits}
                         flags={state.flags}
+                        identity={state.identity}
                         difficulty={DIFFICULTY}
                         reacting={state.reacting}
                         reaction={state.reaction}
+                        identityFlavor={identityFlavor}
                         routeFlavor={routeFlavor}
                         reflection={state.reflection}
                         onChoose={chooseOption}
@@ -733,12 +780,14 @@ export default function App() {
                     <Results
                       died={state.died}
                       day={state.day}
+                      best={state.best}
                       tier={currentTier}
                       endingId={state.endingId}
                       newAch={state.newAch}
                       newEnding={state.newEnding}
                       characterProfile={state.characterProfile}
-                      loadout={state.loadout}
+                      identity={state.identity}
+                      route={routeFromFlags(state.flags)}
                       shareLabel={state.shareLabel}
                       onShare={onShare}
                       onAgain={onAgain}

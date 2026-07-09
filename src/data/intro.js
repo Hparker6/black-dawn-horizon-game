@@ -11,8 +11,19 @@
 // 'image' is a one-off full-bleed cinematic beat — its own component, no
 // shared chrome at all — so it can't accidentally inherit paper-page
 // styling meant for plain text beats.
+// Exactly two lore pages before the route choice — the ruined city, then
+// leaving home — so the full flow reads: main menu → BEGIN → these two
+// pages → highways-or-backroads → draft → events → ending. The coast guard
+// rumor folded into page one so nothing sits between Leaving Home and the
+// route decision.
 export const INTRO_SCREENS = [
-  { body: ["Three weeks since the grid failed.", "The city didn't take it well."] },
+  {
+    body: [
+      "Three weeks since the grid failed.",
+      "The city didn't take it well.",
+      "They say the coast guard station still runs — lights, a working radio, maybe a way out.",
+    ],
+  },
   {
     type: "image",
     title: "Leaving Home",
@@ -20,7 +31,6 @@ export const INTRO_SCREENS = [
     imageAlt: "A farmhouse at dusk seen from a loaded pickup truck's tailgate, fires burning on the horizon down the road ahead.",
     journal: ["I waited longer than I should have.", "There's nothing left here now.", "If the coast is still standing...", "it's my last chance."],
   },
-  { body: ["They say the coast guard station still runs — lights, a working radio, maybe a way out.", "Maybe."] },
 ];
 
 // The run-shaping choice that ends the intro — rendered by screens/

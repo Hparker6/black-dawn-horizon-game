@@ -24,9 +24,14 @@ import EventReaction from "../components/EventReaction.jsx";
 // nothing here says "can't," only "should you." Only "locked" gets the
 // dead/disabled treatment (dashed border, diagonal hazard stripes, reduced
 // opacity, not-allowed cursor) so the two never read alike.
+// "keepsake" (a choice unlocked by the drafted keepsake — see classifyChoices
+// in engine/events.js) gets its own quiet gold treatment: it's an emotional
+// beat, not a tactical unlock, so it shouldn't wear ready's confident solid
+// green — warm, slightly precious, clearly still clickable.
 function kindMeta(kind) {
   if (kind === "locked") return { icon: "🔒", roundelBg: t.badgeLockedBg, roundelColor: t.muted, roundelBorder: t.borderDashed };
   if (kind === "ready") return { icon: "✦", roundelBg: t.green, roundelColor: t.paper, roundelBorder: t.green };
+  if (kind === "keepsake") return { icon: "❧", roundelBg: t.highlightBg, roundelColor: t.goldDark, roundelBorder: t.gold };
   if (kind === "check") return { icon: "⚠", roundelBg: t.badgeCheckBg, roundelColor: t.blood, roundelBorder: t.blood };
   return { icon: "✓", roundelBg: t.safeBg, roundelColor: t.green, roundelBorder: t.safeBorder }; // plain/safe
 }
@@ -47,6 +52,7 @@ function choiceStyle(kind) {
   if (kind === "locked")
     return { ...base, cursor: "not-allowed", border: `1px dashed ${t.borderDashed}`, background: `repeating-linear-gradient(45deg,${t.lockedStripeA} 0 6px,${t.lockedStripeB} 6px 12px)`, opacity: 0.72 };
   if (kind === "ready") return { ...base, cursor: "pointer", border: `1px solid ${t.green}`, background: t.readyBg, boxShadow: "0 2px 0 #2d5a3d" };
+  if (kind === "keepsake") return { ...base, cursor: "pointer", border: `1px solid ${t.gold}`, background: t.highlightBg, boxShadow: "0 2px 0 #a8801f" };
   // Full-strength red border (not the old 45%-opacity wash) so it reads as
   // vividly dangerous, but the fill stays light and the button is exactly
   // as clickable/full-opacity as every non-locked kind — alive, not blocked.
@@ -58,6 +64,7 @@ function badgeStyle(kind) {
   const base = { alignSelf: "flex-start", fontSize: "10px", letterSpacing: "1.5px", padding: "2px 7px", borderRadius: "2px" };
   if (kind === "locked") return { ...base, color: t.muted, background: t.badgeLockedBg };
   if (kind === "ready") return { ...base, color: t.paper, background: t.badgeReadyBg };
+  if (kind === "keepsake") return { ...base, color: t.goldDark, background: t.paper, border: `1px solid ${t.gold}` };
   if (kind === "check") return { ...base, color: t.ink, background: t.badgeCheckBg };
   return { ...base, color: t.green, background: t.safeBg, border: `1px solid ${t.safeBorder}` }; // plain/safe
 }
@@ -95,20 +102,37 @@ function IconRoundel({ kind }) {
 // behind a modal). This screen owns only the event card itself: title, body,
 // and either the choice list or — once a plain/trait choice has resolved —
 // the inline EventReaction in its place.
-export default function Events({ event, traits, flags, difficulty, reacting, reaction, routeFlavor, reflection, onChoose, onReactionContinue }) {
-  const classified = classifyChoices(event, traits, flags, difficulty);
+export default function Events({ event, traits, flags, identity, difficulty, reacting, reaction, identityFlavor, routeFlavor, reflection, onChoose, onReactionContinue }) {
+  const classified = classifyChoices(event, traits, flags, difficulty, identity);
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "18px 24px 24px" }}>
+    // Keyed by event id so each new entry re-animates — the same quiet
+    // fade-up the lore pages use, no page-flip.
+    <div key={event.id} style={{ flex: 1, display: "flex", flexDirection: "column", padding: "22px 26px 26px", animation: "bdhFadeUp .45s ease both" }}>
       {/* Natural height, top-anchored — the terse body text shouldn't stretch
           to fill the page. The gap it leaves is claimed deliberately below. */}
-      <div style={{ overflow: "auto", animation: "bdhFadeUp .45s ease both" }}>
-        <div style={{ fontFamily: t.fontDisplay, fontSize: "32px", color: t.ink, lineHeight: 1, letterSpacing: "1px", marginBottom: "16px" }}>{event.title}</div>
+      <div style={{ overflow: "auto" }}>
+        <div style={{ fontFamily: t.fontDisplay, fontSize: "38px", color: t.ink, lineHeight: 1, letterSpacing: "1px" }}>{event.title}</div>
+        {/* A hand-drawn underline beneath the title — one imperfect stroke,
+            the kind a tired hand leaves under a heading that matters. */}
+        <svg viewBox="0 0 220 8" style={{ width: "200px", height: "8px", display: "block", margin: "6px 0 18px", opacity: 0.55 }} aria-hidden="true">
+          <path d="M3 5 C50 2.2 120 6 217 3.6" fill="none" stroke="#2a2620" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
         {(event.body || []).map((line, i) => (
-          <p key={i} style={{ fontSize: "16px", lineHeight: 1.6, color: "#2a2620", margin: "0 0 12px", textWrap: "pretty" }}>
+          <p key={i} style={{ fontSize: "17px", lineHeight: 1.7, color: "#2a2620", margin: "0 0 14px", textWrap: "pretty" }}>
             {line}
           </p>
         ))}
+        {/* Identity flavor (engine/events.js's identityFlavorFor): the scene
+            as this build perceives it — the dog smelling someone inside, the
+            hunter counting figures first. Gold-edged (vs. the route/
+            reflection lines' neutral dash) because it's the run's identity
+            speaking, same accent as identity choice badges below. */}
+        {identityFlavor && (
+          <p style={{ fontFamily: t.fontHand, fontWeight: 500, fontSize: "17px", lineHeight: 1.4, color: t.goldDark, margin: "0 0 12px", borderLeft: `2px solid ${t.gold}`, paddingLeft: "10px", transform: "rotate(-.3deg)" }}>
+            {identityFlavor}
+          </p>
+        )}
         {/* Occasional route callout (engine/pacing.js's routeFlavorFor) — only
             ever present when this event's type actually matches the route's
             premise, so it reads as the road commenting on what's happening
@@ -116,7 +140,7 @@ export default function Events({ event, traits, flags, difficulty, reacting, rea
             width (unlike the wide-screen-only FIELD NOTE margin scrap in
             App.jsx), since the whole point is that every player feels it. */}
         {routeFlavor && (
-          <p style={{ fontSize: "13px", lineHeight: 1.5, color: t.muted, fontStyle: "italic", margin: "0 0 12px", borderLeft: `2px solid ${t.borderDashed}`, paddingLeft: "10px" }}>
+          <p style={{ fontFamily: t.fontHand, fontWeight: 500, fontSize: "16px", lineHeight: 1.4, color: t.muted, margin: "0 0 12px", borderLeft: `2px solid ${t.borderDashed}`, paddingLeft: "10px", transform: "rotate(.25deg)" }}>
             {routeFlavor}
           </p>
         )}
@@ -125,7 +149,7 @@ export default function Events({ event, traits, flags, difficulty, reacting, rea
             it reads as the player's own hand noticing something rather than
             a game mechanic surfacing. */}
         {reflection && (
-          <p style={{ fontSize: "13px", lineHeight: 1.5, color: t.muted, fontStyle: "italic", margin: "0 0 12px", borderLeft: `2px solid ${t.borderDashed}`, paddingLeft: "10px" }}>
+          <p style={{ fontFamily: t.fontHand, fontWeight: 500, fontSize: "16px", lineHeight: 1.4, color: t.muted, margin: "0 0 12px", borderLeft: `2px solid ${t.borderDashed}`, paddingLeft: "10px", transform: "rotate(-.25deg)" }}>
             {reflection}
           </p>
         )}

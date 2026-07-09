@@ -4,7 +4,7 @@ export const ACH = [
   {id:'veteran', name:'Old Guard', desc:'Survive 34+ days in a run.'},
   {id:'legend', name:'Horizon Walker', desc:'Reach the coast as a Legend.'},
   {id:'rescue', name:'Answered', desc:'Escape by Military Rescue.'},
-  {id:'clutch', name:'Against the Odds', desc:'Pass a check needing 10 or more.'},
+  {id:'clutch', name:'Against the Odds', desc:'Pass the hardest check there is — needing 7 or more.'},
   {id:'pacifist', name:'Ghost', desc:'Reach the coast without failing a roll.'},
   {id:'unlucky', name:'The Short Straw', desc:'Die within the first three days.'},
 ];

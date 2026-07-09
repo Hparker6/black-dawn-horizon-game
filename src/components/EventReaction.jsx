@@ -27,8 +27,27 @@ export default function EventReaction({ reaction, onContinue }) {
         animation: "bdhFadeUp .3s ease both",
       }}
     >
-      {reaction.tag && <div style={{ fontSize: "11px", letterSpacing: "2px", color: accent, marginBottom: "8px" }}>{reaction.tag}</div>}
-      <p style={{ fontSize: "14px", lineHeight: 1.55, color: "#2a2620", margin: "0 0 12px" }}>{reaction.msg}</p>
+      {/* The outcome tag as a quiet ink stamp — bordered, faintly tilted,
+          pressed into the page rather than typeset on it. */}
+      {reaction.tag && (
+        <div
+          style={{
+            display: "inline-block",
+            fontSize: "11px",
+            letterSpacing: "2px",
+            color: accent,
+            border: `1.5px solid ${accent}`,
+            borderRadius: "2px",
+            padding: "3px 8px",
+            marginBottom: "10px",
+            transform: "rotate(-1.2deg)",
+            opacity: 0.85,
+          }}
+        >
+          {reaction.tag}
+        </div>
+      )}
+      <p style={{ fontSize: "15px", lineHeight: 1.65, color: "#2a2620", margin: "0 0 12px" }}>{reaction.msg}</p>
       <div style={{ display: "flex", gap: "10px", fontSize: "11px", letterSpacing: "1px", color: t.muted, marginBottom: "14px" }}>
         <span>{daysLabel}</span>
         <span>{hpLabel}</span>

@@ -103,6 +103,28 @@ ENDING_RECAPS["paid_in_full"] = {
   recap: (item, days) =>
     `You left the city with ${item} and the will to see the coast. You took the toll bridge by force, and the pharmacy split by force, and told yourself both times the road owed you that much. It didn't. Because you took twice and gave back nothing, the black dawn collected what you owed ${days} days in — the road remembers, even when it doesn't say so out loud.`,
 };
+// Survivor Identity pass — keepsake-driven secrets. Each keys off the
+// keepsake's draft flag (keepsake_<id>, stamped by App.jsx) PLUS the flag
+// its rare event/dialogue sets, so carrying the object alone never
+// qualifies — the player has to have actually let it speak mid-run. The
+// one exception is the tags: their whole meaning is what happens when you
+// fall, so death while carrying them is the condition itself.
+ENDING_RECAPS["vow_kept"] = {
+  died: false,
+  recap: (item, days) =>
+    `You walked out of the dead city with ${item} and a plan half-formed. At the overlook you carved both your initials into the rail one more time, and after that the road never really had you — you were already spoken for. ${days} days after it started, you reached the coast still wearing the ring, still meaning it.`,
+};
+ENDING_RECAPS["one_more_song"] = {
+  died: false,
+  recap: (item, days) =>
+    `You walked out of the dead city with ${item} and a plan half-formed. Somewhere back there you played the tape out loud — side A, third song — and gave the old world one more chance to sing before the end. ${days} days after it started, you reached the coast humming it.`,
+};
+ENDING_RECAPS["name_remembered"] = {
+  died: true,
+  recap: (item, days) =>
+    `You left the city with ${item} and the will to see the coast. ${days} days in, the black dawn kept you — but you carried the tags the whole way, and whoever finds you will find a name, a chain, and proof you were somebody. They'll say it out loud once, properly. It's not rescue. It's not nothing, either.`,
+};
+
 ENDING_RECAPS["price_of_kindness"] = {
   died: true,
   recap: (item, days) =>
@@ -158,6 +180,25 @@ export const ENDINGS = [
     desc: "Reach the coast having taken what you needed, twice over.",
   },
   {
+    id: "vow_kept",
+    label: "The Vow Kept",
+    secret: true,
+    died: false,
+    // Both flags: the keepsake itself (stamped at the draft) and the
+    // overlook's carving — carrying the ring without ever stopping for it
+    // doesn't earn this.
+    requiresFlags: ["keepsake_wedding_ring", "carved_initials"],
+    desc: "Reach the coast still carrying the promise you made.",
+  },
+  {
+    id: "one_more_song",
+    label: "One More Song",
+    secret: true,
+    died: false,
+    requiresFlags: ["keepsake_cassette_tape", "played_the_tape"],
+    desc: "Reach the coast having given the old world one more chance to sing.",
+  },
+  {
     id: "clean_hands",
     label: "Clean Hands",
     secret: true,
@@ -171,13 +212,22 @@ export const ENDINGS = [
     excludeFlags: ["robbed_toll", "robbed_scavenger"],
     desc: "Reach the coast having helped when it cost you nothing to walk past, and taken nothing you didn't earn.",
   },
+  // Both route endings carry a day gate on top of the route flag. Without
+  // one they matched EVERY survival (every run picks a route at the intro),
+  // which silently made the five base endings unreachable — no run could
+  // ever end on Military Rescue, and the "Answered" medal was dead. The
+  // gates encode what each ending's own text already claims: the ghost
+  // OUTRAN the horizon (an unusually fast highway run), the long road
+  // ARRIVED LATE (an unusually patient backroads run). Anything in between
+  // falls through to whichever base ending the final event actually earned.
   {
     id: "ghost_of_the_highway",
     label: "Ghost of the Highway",
     secret: true,
     died: false,
     requiresFlags: ["route_highway"],
-    desc: "Take the fast, exposed roads the whole way — and still make it.",
+    dayMax: 17,
+    desc: "Take the fast, exposed roads the whole way — and outrun the horizon.",
   },
   {
     id: "the_long_road_home",
@@ -185,6 +235,7 @@ export const ENDINGS = [
     secret: true,
     died: false,
     requiresFlags: ["route_backroads"],
+    dayMin: 34,
     desc: "Keep to the quiet backroads the whole way — patience over speed.",
   },
   {
@@ -207,9 +258,125 @@ export const ENDINGS = [
     excludeFlags: ["robbed_toll", "robbed_scavenger"],
     desc: "Help when it costs you, right up until it costs you everything.",
   },
+  {
+    id: "name_remembered",
+    label: "A Name to Send Home",
+    secret: true,
+    died: true,
+    // Deliberately LAST in the death pool: any death while carrying the
+    // tags qualifies, so the two choice-earned death secrets above must get
+    // first claim — this is the fallback meaning of the tags, not an
+    // override of what the run's choices earned.
+    requiresFlags: ["keepsake_military_tags"],
+    desc: "Fall on the road — but fall as somebody, with a name they can send home.",
+  },
 ];
 
 export const SECRET_ENDINGS = ENDINGS.filter((e) => e.secret);
+
+// Sprint 3: every ending owns a hand-inked closing plate — the journal's
+// last illustration. Same sparse stroke vocabulary as the survivor sketches
+// and the intro plate (drawn into a stroked <g>, viewBox 0 0 160 90), keyed
+// by the stable ending id. Two generics cover the unnamed outcomes.
+export const ENDING_ART = {
+  military_rescue: `
+    <path d="M8 72 H152"/><path d="M20 76 q6 -3 12 0 M60 78 q6 -3 12 0 M116 76 q6 -3 12 0" stroke-opacity=".5"/>
+    <path d="M62 38 q0 -8 12 -8 h14 q10 0 10 8 q0 8 -12 8 h-14 q-10 0 -10 -8 Z"/>
+    <path d="M98 36 L124 30 L112 40"/><path d="M74 22 H106"/><path d="M90 22 V30"/><path d="M60 22 l6 2 M120 20 l-6 3" stroke-opacity=".5"/>
+    <path d="M70 52 v6 M96 52 v6 M64 58 H102"/><path d="M84 58 V70" stroke-dasharray="2 4"/>`,
+  signal_fire_rescue: `
+    <path d="M10 74 C40 68 70 70 92 74 H152"/>
+    <path d="M58 72 l7 -14 5 8 5 -11 5 17"/><path d="M50 74 l36 0 M55 68 l26 8" stroke-opacity=".8"/>
+    <path d="M72 48 C68 40 78 36 74 28" stroke-opacity=".45"/>
+    <path d="M148 8 L84 58 M152 20 L92 62" stroke-opacity=".55"/>`,
+  ran_the_gauntlet: `
+    <path d="M8 70 H152"/>
+    <circle cx="126" cy="60" r="16"/><path d="M120 54 v12 M132 54 v12 M120 60 h12"/>
+    <path d="M62 44 l8 8 M70 52 l-2 10 M70 52 l10 -2 M62 44 l-2 -8 M60 36 a4 4 0 1 0 .1 0"/>
+    <path d="M52 58 l-8 6 M66 62 l4 10"/>
+    <path d="M18 74 h3 M30 72 h3 M42 75 h3" stroke-opacity=".5"/>`,
+  barely_made_it: `
+    <path d="M8 74 H152"/>
+    <circle cx="80" cy="62" r="20"/><path d="M72 54 v16 M88 54 v16 M72 62 h16"/>
+    <path d="M114 60 a5 5 0 1 0 .1 0 M116 70 l-2 -6 M112 74 l2 -10 M110 68 l10 -2"/>
+    <path d="M40 24 h18 M96 20 h20 M56 32 h14" stroke-opacity=".4"/>`,
+  lost_on_the_sand: `
+    <path d="M8 72 H152"/>
+    <path d="M56 72 L60 56 L84 52 L88 68 Z" /><path d="M62 58 q10 -8 20 -2" stroke-opacity=".7"/>
+    <path d="M60 72 l-6 6 M86 70 l6 6" stroke-opacity=".5"/>
+    <path d="M100 30 q5 -7 10 0 q5 -7 10 0 M118 20 q4 -5 8 0" stroke-opacity=".7"/>
+    <circle cx="140" cy="66" r="3" stroke-opacity=".55"/>`,
+  endless_road: `
+    <path d="M8 56 H152"/>
+    <path d="M52 88 L76 56 M116 88 L86 56"/><path d="M84 86 L81 56" stroke-dasharray="3 5"/>
+    <path d="M64 56 A16 16 0 0 1 96 56"/>
+    <path d="M24 56 v-10 M20 48 h8 M136 56 v-8 M132 50 h8" stroke-opacity=".6"/>`,
+  path_remembered: `
+    <path d="M20 84 C60 74 50 58 84 50 C110 44 118 34 138 30" stroke-dasharray="4 6"/>
+    <path d="M40 78 h10 M43 74 h5 M44 70 h3"/>
+    <path d="M96 48 h10 M99 44 h5 M100 40 h3"/>
+    <path d="M130 12 a7 7 0 1 0 .1 0" stroke-opacity=".6"/>`,
+  blood_on_the_sand: `
+    <path d="M8 74 H152" stroke-opacity=".6"/>
+    <path d="M62 52 a10 12 0 1 0 .1 0"/><path d="M56 42 v-9 M62 40 v-11 M68 41 v-10 M73 44 v-8 M52 46 l-6 -6"/>
+    <path d="M96 64 L124 52 M122 50 l6 -2 -2 6" />
+    <circle cx="84" cy="70" r="1.6"/><circle cx="92" cy="74" r="1.2"/>`,
+  vow_kept: `
+    <path d="M8 72 H152" stroke-opacity=".5"/>
+    <circle cx="68" cy="42" r="17"/><circle cx="92" cy="42" r="17"/>
+    <path d="M68 25 l-5 -6 5 -5 5 5 Z"/>
+    <path d="M28 76 q6 -3 12 0 M120 76 q6 -3 12 0" stroke-opacity=".45"/>`,
+  one_more_song: `
+    <rect x="34" y="52" width="52" height="30" rx="3"/><circle cx="50" cy="66" r="5"/><circle cx="70" cy="66" r="5"/><path d="M55 66 h10"/>
+    <path d="M86 60 C104 54 100 38 116 32 C126 28 128 22 134 18" stroke-opacity=".7"/>
+    <path d="M120 24 q4 -6 8 0 q4 -6 8 0" stroke-opacity=".8"/>`,
+  clean_hands: `
+    <path d="M50 62 C48 46 58 44 60 52 M60 50 C60 38 68 38 68 48 M68 46 C68 36 76 36 76 46 M76 46 C76 38 84 38 82 50 C82 62 74 70 62 70 C54 70 50 66 50 62 Z"/>
+    <path d="M110 62 C112 46 102 44 100 52 M100 50 C100 38 92 38 92 48" stroke-opacity=".55"/>
+    <path d="M66 24 v-6 M78 26 l4 -5 M54 26 l-4 -5" stroke-opacity=".5"/>`,
+  ghost_of_the_highway: `
+    <path d="M8 66 H152"/><path d="M36 88 L64 66 M124 88 L96 66"/><path d="M82 86 L80 66" stroke-dasharray="3 5"/>
+    <path d="M78 40 a5 5 0 1 0 .1 0 M80 46 v12 M80 50 l-7 4 M80 50 l7 2 M80 58 l-6 8 M80 58 l6 8" stroke-dasharray="3 3" stroke-opacity=".8"/>
+    <path d="M46 36 h14 M100 32 h16" stroke-opacity=".4"/>`,
+  the_long_road_home: `
+    <path d="M8 62 C40 58 70 60 152 54" stroke-opacity=".7"/>
+    <path d="M20 86 C50 76 60 72 84 66 C104 62 118 60 134 58" stroke-dasharray="4 6"/>
+    <path d="M108 54 V40 L122 32 L136 40 V54 Z M116 54 v-8 h12 v8" />
+    <path d="M28 66 v-8 M40 64 v-8 M28 60 h12" stroke-opacity=".6"/>`,
+  paid_in_full: `
+    <path d="M8 76 H152" stroke-opacity=".6"/>
+    <path d="M32 76 V40 M128 76 V40"/>
+    <path d="M32 46 q16 10 30 12 M128 46 q-16 10 -30 12" />
+    <path d="M68 62 a3 3 0 1 0 .1 0 M92 62 a3 3 0 1 0 .1 0" stroke-opacity=".8"/>
+    <path d="M76 70 l2 6 M84 68 l-1 7" stroke-opacity=".55"/>`,
+  price_of_kindness: `
+    <path d="M40 20 H120 M40 20 V70 M120 20 V70 M36 70 H124 M80 20 V70 M40 45 H120" stroke-opacity=".7"/>
+    <path d="M60 70 v-10 h14 v10"/><path d="M67 60 V48"/><path d="M67 48 q-8 -2 -8 -10 q8 0 8 10 q0 -10 8 -10 q0 8 -8 10" />
+    <path d="M96 66 v-8 M92 58 h8" stroke-opacity=".6"/>`,
+  name_remembered: `
+    <path d="M8 76 H152" stroke-opacity=".6"/>
+    <path d="M60 76 q20 -10 40 0" stroke-opacity=".7"/>
+    <path d="M80 70 V26"/><path d="M74 26 h12 M80 20 a4 4 0 1 0 .1 0" stroke-opacity=".8"/>
+    <path d="M80 34 C88 38 90 44 88 50"/><rect x="84" y="48" width="9" height="14" rx="3" transform="rotate(8 88 55)"/>`,
+};
+
+export const GENERIC_DEATH_ART = `
+  <path d="M8 72 H152" stroke-opacity=".6"/>
+  <path d="M70 72 q10 -6 20 0" stroke-opacity=".7"/>
+  <path d="M80 66 V34 M70 42 H90"/>
+  <path d="M116 24 q5 -7 10 0" stroke-opacity=".5"/>`;
+
+export const GENERIC_SURVIVAL_ART = `
+  <path d="M8 64 H152"/>
+  <path d="M60 64 A20 20 0 0 1 100 64"/>
+  <path d="M80 34 v-8 M58 40 l-6 -6 M102 40 l6 -6 M48 56 l-8 -3 M112 56 l8 -3" stroke-opacity=".6"/>
+  <path d="M24 74 q6 -3 12 0 M124 74 q6 -3 12 0" stroke-opacity=".5"/>`;
+
+// The one lookup Results/EndingsCollection need: art for a named ending,
+// falling back to the generic plate matching the outcome.
+export function endingArt(endingId, died) {
+  return ENDING_ART[endingId] || (died ? GENERIC_DEATH_ART : GENERIC_SURVIVAL_ART);
+}
 
 // The one place an ending id gets turned into its display label — for
 // share text and analytics params, which want a human-readable string, not
