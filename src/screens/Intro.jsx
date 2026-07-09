@@ -201,7 +201,7 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
             background: "rgba(250,246,236,.72)",
             boxShadow: "0 0 16px 10px rgba(250,246,236,.6)",
             borderRadius: "8px",
-            padding: "28px 38px",
+            padding: "14px 38px",
             boxSizing: "border-box",
           }}
         >
@@ -210,11 +210,11 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
               <div
                 style={{
                   fontFamily: t.fontDisplay,
-                  fontSize: "clamp(26px,3vw,34px)",
+                  fontSize: "clamp(20px,2.4vw,26px)",
                   letterSpacing: "1px",
                   color: LORE_INK,
                   textShadow: "1.5px 1.5px 0 rgba(139,0,0,.25), 0 1px 0 rgba(255,255,255,.3)",
-                  marginBottom: "24px",
+                  marginBottom: "10px",
                 }}
               >
                 {screen.title}
@@ -225,10 +225,10 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
             <Reveal key={i} delay={bodyDelay(i)}>
               <p
                 style={{
-                  margin: i === 0 ? 0 : "20px 0 0",
+                  margin: i === 0 ? 0 : "8px 0 0",
                   fontFamily: t.fontBody,
-                  fontSize: "clamp(17px,2.1vw,21px)",
-                  lineHeight: 1.85,
+                  fontSize: "clamp(14px,1.6vw,17px)",
+                  lineHeight: 1.45,
                   letterSpacing: ".2px",
                   color: LORE_INK,
                   textShadow: LORE_SHADOW,

@@ -25,12 +25,12 @@ export const INTRO_SCREENS = [
     // into the paper at the edges so the words stay the focus and the art
     // reads as part of the same recovered page, not a backdrop swap.
     art: "/outbreak-city.jpg",
+    // 3 paragraphs (merged from an earlier 5-line cut) so the parchment
+    // panel over the artwork stays short — a caption strip, not a slab.
     body: [
-      "Three weeks since the outbreak.",
-      "The grid failed. The cities fell.",
+      "Three weeks since the outbreak. The grid failed. The cities fell.",
       "The dead didn't stay dead.",
-      "They say the coast guard station still runs — lights, a working radio, maybe a way out.",
-      "Maybe.",
+      "They say the coast guard station still runs — lights, a working radio, maybe a way out. Maybe.",
     ],
   },
   {
