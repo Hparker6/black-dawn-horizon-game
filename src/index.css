@@ -30,6 +30,18 @@ body {
     opacity: 1;
   }
 }
+/* Page dissolve (components/PageTransition.jsx): the outgoing page simply
+   dissolves over the incoming one — a quiet film cut rather than a staged
+   flip; the incoming page's own staggered reveals carry the arrival.
+   Opacity-only, runs on the compositor. */
+@keyframes bdhPageDissolve {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 @keyframes bdhSlip {
   from {
     opacity: 0;
@@ -362,6 +374,30 @@ body {
 .bdh-tip-note:focus-visible {
   box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.35);
   border-radius: 2px;
+}
+
+/* RouteSelect.jsx's two page-cards: the whole illustration + blank-space
+   region is one giant click target, but must never look like a UI card —
+   no fill, no border, just the page underneath lifting slightly like it's
+   being read. Kept deliberately subtle (small scale, soft brightness) per
+   spec: "premium," not flashy. Disabled (mid-selection) cards get
+   pointer-events:none from the disabled attribute itself, so no separate
+   rule is needed to suppress hover once a route's been chosen. */
+.bdh-route-card {
+  transform: scale(1);
+  filter: brightness(1);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transition: transform 0.22s ease, filter 0.22s ease, box-shadow 0.22s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bdh-route-card:hover:not(:disabled) {
+  transform: scale(1.02);
+  filter: brightness(1.06);
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+.bdh-route-card:active:not(:disabled) {
+  transform: scale(1.01);
 }
 
 /* Field-note margin scrap (App.jsx's event screen): only shown once the
