@@ -1,6 +1,9 @@
 import * as t from "../styles/tokens.js";
 import { classifyChoices } from "../engine/events.js";
+import { eventPresentation } from "../engine/narrative-tier.js";
+import { prefersReducedMotion } from "../engine/motion.js";
 import EventReaction from "../components/EventReaction.jsx";
+import Reveal from "../components/Reveal.jsx";
 
 // One visual identity per choice kind — icon, roundel color, border/fill —
 // so risk level reads before the text does. Never relies on color alone:
@@ -104,6 +107,11 @@ function IconRoundel({ kind }) {
 // the inline EventReaction in its place.
 export default function Events({ event, traits, flags, identity, difficulty, reacting, reaction, identityFlavor, routeFlavor, reflection, onChoose, onReactionContinue }) {
   const classified = classifyChoices(event, traits, flags, difficulty, identity);
+  // Narrative-tier intro treatment (engine/narrative-tier.js): a small
+  // banner for hinge decisions and the finale, a hand-written note for
+  // callbacks and keepsake memories, nothing for atmospheric events —
+  // presentation only, derived from the event's existing shape.
+  const presentation = eventPresentation(event);
 
   return (
     // Keyed by event id so each new entry re-animates — the same quiet
@@ -112,6 +120,44 @@ export default function Events({ event, traits, flags, identity, difficulty, rea
       {/* Natural height, top-anchored — the terse body text shouldn't stretch
           to fill the page. The gap it leaves is claimed deliberately below. */}
       <div style={{ overflow: "auto" }}>
+        {presentation && presentation.banner && (
+          <Reveal duration={500}>
+            {/* Small-caps rule block, same quiet typography as the page
+                header rows — a chapter marker, not an alert. */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "7px", textAlign: "center", margin: "2px 0 26px" }}>
+              <span style={{ width: "100%", maxWidth: "300px", height: "1px", background: t.borderSubtle }} />
+              <span style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "12px", letterSpacing: "4px", color: t.ink }}>{presentation.banner.title}</span>
+              <span style={{ fontFamily: t.fontBody, fontSize: "12px", letterSpacing: "1px", color: t.muted }}>{presentation.banner.subtitle}</span>
+              <span style={{ width: "100%", maxWidth: "300px", height: "1px", background: t.borderSubtle }} />
+            </div>
+          </Reveal>
+        )}
+        {presentation && presentation.note && (
+          <Reveal duration={500}>
+            {/* A scribbled aside above the heading — no border rule (unlike
+                the mid-entry flavor lines below) so it reads as the hand
+                pausing before the entry, not part of it. Keepsake notes take
+                the same quiet gold as keepsake choices; callbacks stay in
+                plain pencil. */}
+            <p
+              style={{
+                fontFamily: t.fontHand,
+                fontWeight: 500,
+                fontSize: "17px",
+                lineHeight: 1.4,
+                color: presentation.tier === "keepsake" ? t.goldDark : t.muted,
+                margin: "0 0 18px",
+                transform: "rotate(-.35deg)",
+              }}
+            >
+              {presentation.note}
+            </p>
+          </Reveal>
+        )}
+        {/* When a tier intro is present, the entry itself arrives a beat
+            after it (label first, then the story) — atmospheric events keep
+            the page's single fade exactly as before. */}
+        <div style={presentation && !prefersReducedMotion() ? { animation: "bdhFadeUp .5s ease both", animationDelay: "260ms" } : undefined}>
         <div style={{ fontFamily: t.fontDisplay, fontSize: "38px", color: t.ink, lineHeight: 1, letterSpacing: "1px" }}>{event.title}</div>
         {/* A hand-drawn underline beneath the title — one imperfect stroke,
             the kind a tired hand leaves under a heading that matters. */}
@@ -153,6 +199,7 @@ export default function Events({ event, traits, flags, identity, difficulty, rea
             {reflection}
           </p>
         )}
+        </div>
       </div>
       {/* A classic scene-break rule — thin lines flanking the ornament — reads
           as a deliberate typographic pause between the entry and the choices
