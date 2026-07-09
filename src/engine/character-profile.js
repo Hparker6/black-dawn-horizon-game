@@ -63,3 +63,19 @@ export function getEndingReflection(profile) {
   if (v <= -3) return ENDING_REFLECTIONS.survival;
   return ENDING_REFLECTIONS.balanced;
 }
+
+// Short title form of the same cut — the "WHO YOU BECAME" line on the
+// results cover page. Same thresholds as the prose reflection above so the
+// title and the paragraph beneath it can never disagree about who you were.
+const IDENTITY_EPITHETS = {
+  compassion: "The One Who Still Stopped",
+  balanced: "The One Who Endured",
+  survival: "The One Who Kept Walking",
+};
+
+export function getIdentityEpithet(profile) {
+  const v = (profile && profile.compassion) || 0;
+  if (v >= 3) return IDENTITY_EPITHETS.compassion;
+  if (v <= -3) return IDENTITY_EPITHETS.survival;
+  return IDENTITY_EPITHETS.balanced;
+}

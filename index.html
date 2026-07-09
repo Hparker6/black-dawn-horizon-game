@@ -3,29 +3,45 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Black Dawn Horizon</title>
+    <title>Black Dawn Horizon | Free Browser Zombie Survival Game</title>
     <meta
       name="description"
-      content="A grim survival roguelike journal. Every choice — who you help, who you leave behind — shapes how your story ends. How long would you survive?"
+      content="A free browser zombie survival game where every decision shapes your story. Draft your survivor, choose your route, and discover who you become."
     />
+    <meta
+      name="keywords"
+      content="browser zombie game, free survival game, text survival game, choice based game, post apocalypse game, journal survival game, indie browser game"
+    />
+    <meta name="author" content="Black Dawn Horizon" />
     <link rel="canonical" href="https://blackdawnhorizon.com/" />
     <meta name="theme-color" content="#20180d" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Black Dawn Horizon" />
     <meta property="og:url" content="https://blackdawnhorizon.com/" />
-    <meta property="og:title" content="Black Dawn Horizon" />
+    <meta property="og:title" content="Black Dawn Horizon | Free Browser Zombie Survival Game" />
     <meta
       property="og:description"
-      content="A grim survival roguelike journal. Every choice — who you help, who you leave behind — shapes how your story ends. How long would you survive?"
+      content="A free browser zombie survival game where every decision shapes your story. Draft your survivor, choose your route, and discover who you become."
+    />
+    <meta property="og:image" content="https://blackdawnhorizon.com/notebook-home.jpg" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="682" />
+    <meta
+      property="og:image:alt"
+      content="A weathered survivor's journal open on a table beside a compass, from Black Dawn Horizon"
     />
 
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Black Dawn Horizon" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Black Dawn Horizon | Free Browser Zombie Survival Game" />
     <meta
       name="twitter:description"
-      content="A grim survival roguelike journal. How long would you survive?"
+      content="A free browser zombie survival game where every decision shapes your story. Draft your survivor, choose your route, and discover who you become."
     />
+    <meta name="twitter:image" content="https://blackdawnhorizon.com/notebook-home.jpg" />
 
     <script type="application/ld+json">
       {
@@ -33,10 +49,25 @@
         "@type": "VideoGame",
         "name": "Black Dawn Horizon",
         "url": "https://blackdawnhorizon.com/",
-        "description": "A grim survival roguelike journal. Every choice shapes how your story ends.",
-        "genre": "Roguelike",
+        "image": "https://blackdawnhorizon.com/notebook-home.jpg",
+        "description": "A free browser zombie survival game where every decision shapes your story. Draft your survivor, choose your route, and discover who you become.",
+        "genre": ["Survival", "Interactive Fiction", "Roguelike"],
+        "gamePlatform": "Web Browser",
         "applicationCategory": "Game",
-        "operatingSystem": "Web browser"
+        "operatingSystem": "Any (Web Browser)",
+        "playMode": "SinglePlayer",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Black Dawn Horizon",
+          "url": "https://blackdawnhorizon.com/"
+        }
       }
     </script>
 
@@ -46,6 +77,28 @@
       href="https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&family=Caveat:wght@500;700&display=swap"
       rel="stylesheet"
     />
+
+    <style>
+      #about-bdh {
+        background: #20180d;
+        color: #e8dcc0;
+        font-family: "Special Elite", "Courier New", monospace;
+        padding: 3rem 1.5rem 4rem;
+        line-height: 1.7;
+      }
+      #about-bdh .about-inner {
+        max-width: 42rem;
+        margin: 0 auto;
+      }
+      #about-bdh h2 {
+        color: #d99a2b;
+        font-size: 1.4rem;
+        margin: 0 0 1rem;
+      }
+      #about-bdh p {
+        margin: 0 0 1rem;
+      }
+    </style>
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZR35LL8CSG"></script>
@@ -59,6 +112,26 @@
   </head>
   <body>
     <div id="root"></div>
+    <section id="about-bdh" aria-label="About Black Dawn Horizon">
+      <div class="about-inner">
+        <h2>About Black Dawn Horizon</h2>
+        <p>
+          Black Dawn Horizon is a free browser-based zombie survival game where every
+          decision shapes your journey. Build your survivor by choosing a weapon, a
+          companion, and a keepsake. Travel the dangerous highways or the quiet
+          backroads, uncover hidden events, and discover not just whether you
+          survive&mdash;but who you become.
+        </p>
+        <p>
+          Every run is written into your survivor's journal: a choice-based,
+          text-driven story of the post-apocalypse where who you help and who you
+          leave behind decides how your story ends. No downloads, no accounts, and
+          nothing to pay&mdash;the game runs entirely in your browser. Each playthrough
+          is different, so open the journal, draft your survivor, and see how far the
+          road takes you.
+        </p>
+      </div>
+    </section>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

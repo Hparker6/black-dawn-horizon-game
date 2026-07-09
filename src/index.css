@@ -42,6 +42,19 @@ body {
     opacity: 0;
   }
 }
+/* The incoming half of the same cut: fades 0->1 in lockstep with
+   bdhPageDissolve (same duration) so the two together read as one true
+   crossfade — no gap where the outgoing page has finished fading before the
+   incoming page's own content has arrived, which is what read as a "flash"
+   of bare paper between pages. */
+@keyframes bdhPageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @keyframes bdhSlip {
   from {
     opacity: 0;
@@ -398,6 +411,22 @@ body {
 }
 .bdh-route-card:active:not(:disabled) {
   transform: scale(1.01);
+}
+
+/* Survivor identity draft cards (screens/Draft.jsx): each taped-in sketch
+   sits at its own slight tilt (inline transform), so hover must not stomp
+   that — the class only adds lift via filter/shadow, never transform.
+   Disabled (after a pick) cards lose hover via :not(:disabled), same
+   pattern as the route cards above. */
+.bdh-id-card {
+  -webkit-tap-highlight-color: transparent;
+}
+.bdh-id-card:hover:not(:disabled) {
+  filter: brightness(1.04);
+  box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.45) !important;
+}
+.bdh-id-card:active:not(:disabled) {
+  filter: brightness(0.99);
 }
 
 /* Field-note margin scrap (App.jsx's event screen): only shown once the

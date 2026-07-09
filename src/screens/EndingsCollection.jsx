@@ -1,5 +1,5 @@
 import * as t from "../styles/tokens.js";
-import { ENDINGS } from "../data/endings.js";
+import { ENDINGS, ENDING_ART } from "../data/endings.js";
 
 function endingStyle(discovered) {
   return {
@@ -33,7 +33,16 @@ export default function EndingsCollection({ discovered }) {
           const hidden = e.secret && !found;
           return (
             <div key={e.id} style={endingStyle(found)}>
-              <div style={{ fontSize: "20px", lineHeight: 1, marginBottom: "6px" }}>{found ? "✦" : "🔒"}</div>
+              {/* A discovered ending shows its own closing plate (Sprint 3,
+                  data/endings.js ENDING_ART) — the collection becomes a wall
+                  of small framed illustrations, not a grid of glyphs. */}
+              {found && ENDING_ART[e.id] ? (
+                <svg viewBox="0 0 160 90" style={{ width: "100%", display: "block", marginBottom: "7px", background: "#f1ead9", border: "1px solid rgba(20,16,12,.28)", borderRadius: "1px" }} aria-hidden="true">
+                  <g fill="none" stroke="#2a2620" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: ENDING_ART[e.id] }} />
+                </svg>
+              ) : (
+                <div style={{ fontSize: "20px", lineHeight: 1, marginBottom: "6px" }}>{found ? "✦" : "🔒"}</div>
+              )}
               <div style={{ fontSize: "13px", letterSpacing: ".5px", color: found ? t.ink : t.rankMuted, lineHeight: 1.15 }}>{hidden ? "?????" : e.label}</div>
               <div style={{ fontSize: "10px", color: t.rankMuted, marginTop: "4px", lineHeight: 1.35, textWrap: "pretty" }}>{hidden ? "?????" : e.desc}</div>
             </div>

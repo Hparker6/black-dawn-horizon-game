@@ -16,6 +16,13 @@ function dangerLevel(hp, hpMax) {
   return Math.max(0, Math.min(1, 1 - hp / hurtAt));
 }
 
+// Sprint 3 (revised): two quiet physical cues, both static — a stack of
+// pages peeking out beneath the bottom edge (layered hairline shadows) and
+// a faint fiber texture across the paper itself. The spiral-binding strip
+// that briefly lived on the left edge is gone: it fought every full-bleed
+// art page (intro, route select) and read as a stray white column.
+const PAGE_STACK_SHADOW = "0 1px 0 #fbf7ee inset, 0 2px 0 #e6dcc6, 0 5px 0 #d9cdb2, 0 8px 0 #c9bc9e, 0 9px 14px -4px rgba(0,0,0,.5)";
+
 // Wraps the journal panel so its own condition (hp/hpMax) drives tasteful
 // tension cues that escalate with how close to death the run is: a
 // darkening/desaturating filter, a pulsing ink-bleed vignette at the edges
@@ -52,8 +59,8 @@ export default function DangerAtmosphere({ hp, hpMax, reduceMotion, children }) 
           minHeight: "min(88vh,940px)",
           background: t.paper,
           color: t.ink,
-          borderRadius: "2px",
-          boxShadow: `0 1px 0 #fbf7ee inset, ${t.panelFrameGlow}`,
+          borderRadius: "2px 3px 3px 2px",
+          boxShadow: `${PAGE_STACK_SHADOW}, ${t.panelFrameGlow}`,
           backgroundImage: t.coffeeRingBg,
           overflow: "hidden",
           display: "flex",
@@ -62,7 +69,24 @@ export default function DangerAtmosphere({ hp, hpMax, reduceMotion, children }) 
           transition: "filter 1.1s ease",
         }}
       >
-        {children}
+        {/* Paper fiber: the same fractal noise the app already uses, but
+            confined to the page at whisper opacity so the cream reads as
+            stock, not screen. Multiply keeps ink/type contrast intact. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: "none",
+            mixBlendMode: "multiply",
+            opacity: 0.05,
+            backgroundImage: t.noiseOverlayBg,
+          }}
+        />
+        <div style={{ position: "relative", zIndex: 3, display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+          {children}
+        </div>
         {level > 0 && (
           <div
             aria-hidden="true"

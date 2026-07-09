@@ -2,13 +2,17 @@ import { useState } from "react";
 import * as t from "../styles/tokens.js";
 import { ROUTE_CHOICE } from "../data/intro.js";
 
-// Timing for the multi-phase selection sequence (spec-given): a beat after
-// clicking before the journal line appears, how long that line holds, then
-// how long the whole screen takes to dissolve before the existing route
-// logic (onChooseRoute) actually fires and swaps to the draft screen.
-const SELECT_DELAY_MS = 600;
-const JOURNAL_HOLD_MS = 1500;
-const DISSOLVE_MS = 550;
+// Timing for the multi-phase selection sequence: a beat after clicking
+// before the journal line appears, how long that line holds, then how long
+// the whole screen takes to dissolve before the existing route logic
+// (onChooseRoute) actually fires and swaps to the draft screen. Originally
+// 600/1500/550 (2.65s total) — read as a stall between clicking and the
+// draft screen actually arriving, so all three are cut roughly in half;
+// the journal line still gets a readable beat, it just doesn't hold the
+// player hostage to see the next page.
+const SELECT_DELAY_MS = 300;
+const JOURNAL_HOLD_MS = 750;
+const DISSOLVE_MS = 350;
 
 // Measured against the source art (public/route-select.jpg) the same way
 // NotebookHome's strip zones were: percentages of the notebook image's own

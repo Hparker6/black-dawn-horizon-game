@@ -1,11 +1,9 @@
-// Verbatim port of DCLogic's draft helpers (rand/shuffleFour) plus the pure
-// portion of onPickCard's state math (stat/health/trait/loadout accumulation).
-// Screen/round transition timing (the 620ms "TAKEN" stamp delay) stays in
-// App.jsx since it's a setTimeout choreography, not pure logic.
-
-export function rand(a) {
-  return a[Math.floor(Math.random() * a.length)];
-}
+// Draft helpers for the Survivor Identity roll (data/survivor.js,
+// screens/Draft.jsx): each of the three identity slots ROLLS four random
+// pieces from its pool of eight — luck decides what fate offers, the
+// player decides who they are from what landed. Rarity on the pieces is a
+// visual/celebration axis only (same rule as the original item crates):
+// shuffleFour draws uniformly regardless of tier.
 
 export function shuffleFour(pool) {
   const arr = [...pool];
@@ -16,28 +14,9 @@ export function shuffleFour(pool) {
   return arr.slice(0, 4);
 }
 
-export function applyCardPick({ stats, hpMax, hp, traits, loadout }, card) {
-  const nextStats = { ...stats };
-  let nextHpMax = hpMax;
-  let nextHp = hp;
-  for (const k in card.stats) {
-    if (k === "health") {
-      nextHpMax += card.stats[k];
-      nextHp += card.stats[k];
-    } else {
-      nextStats[k] += card.stats[k];
-    }
-  }
-  const nextTraits = card.trait ? [...traits, card.trait] : traits;
-  // id carried (stable, from data/items.js) alongside name/trait so a later
-  // sprint can look up "which items are in this loadout" by id instead of
-  // matching on the display name. stats carried so a later dice check can
-  // attribute its bonus back to the specific drafted item(s) that produced
-  // it. rarity carried so the persistent loadout display (LoadoutStrip) can
-  // color-code each item the same way the draft card did.
-  const nextLoadout = [...loadout, { id: card.id, name: card.name, trait: card.trait, stats: card.stats, rarity: card.rarity }];
-  return { stats: nextStats, hpMax: nextHpMax, hp: nextHp, traits: nextTraits, loadout: nextLoadout };
-}
+// Identity pieces carry no stats, so today this always returns [] — but the
+// dice overlay's attribution plumbing stays intact for anything a later
+// sprint might add that DOES contribute to a check.
 
 // For a given stat (combat/survival/wits), returns the loadout items that
 // contributed to it, in draft order — e.g. [{id:'map', name:'County Map', amount:3}].

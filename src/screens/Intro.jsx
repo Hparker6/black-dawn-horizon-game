@@ -186,21 +186,22 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
         </Reveal>
         <div style={{ height: "1px", background: t.borderSubtle, margin: "14px 0 auto" }} />
 
+        <div style={{ flex: 1 }} />
         {/* The parchment veil: translucent paper wash + feathered halo (the
             boxShadow) so it reads as a cleaner patch of the same page, not a
-            card sitting on top of it. Halo kept tight — over background
-            artwork a wide bleed whites out half the illustration. */}
+            card sitting on top of it. Docked to the bottom edge as a full
+            width strip (rather than a centered card) so the art reads
+            uninterrupted above it and the log sits like a caption. */}
         <div
           style={{
-            alignSelf: "center",
-            margin: "28px 0",
-            maxWidth: "620px",
+            alignSelf: "stretch",
+            margin: "0 0 8px",
             width: "100%",
             textAlign: "center",
             background: "rgba(250,246,236,.72)",
             boxShadow: "0 0 16px 10px rgba(250,246,236,.6)",
             borderRadius: "8px",
-            padding: "34px 38px",
+            padding: "14px 38px",
             boxSizing: "border-box",
           }}
         >
@@ -209,11 +210,11 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
               <div
                 style={{
                   fontFamily: t.fontDisplay,
-                  fontSize: "clamp(26px,3vw,34px)",
+                  fontSize: "clamp(20px,2.4vw,26px)",
                   letterSpacing: "1px",
                   color: LORE_INK,
                   textShadow: "1.5px 1.5px 0 rgba(139,0,0,.25), 0 1px 0 rgba(255,255,255,.3)",
-                  marginBottom: "24px",
+                  marginBottom: "10px",
                 }}
               >
                 {screen.title}
@@ -224,10 +225,10 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
             <Reveal key={i} delay={bodyDelay(i)}>
               <p
                 style={{
-                  margin: i === 0 ? 0 : "20px 0 0",
+                  margin: i === 0 ? 0 : "8px 0 0",
                   fontFamily: t.fontBody,
-                  fontSize: "clamp(17px,2.1vw,21px)",
-                  lineHeight: 1.85,
+                  fontSize: "clamp(14px,1.6vw,17px)",
+                  lineHeight: 1.45,
                   letterSpacing: ".2px",
                   color: LORE_INK,
                   textShadow: LORE_SHADOW,
