@@ -103,7 +103,31 @@ function GhostSlots() {
   );
 }
 
-function SketchArt({ art }) {
+function SketchArt({ art, image }) {
+  // Illustrated plates (data/survivor.js `image`) render in place of the SVG
+  // sketch; the sketch stays as the fallback if the file is missing or fails
+  // to load, so a settled card is never blank.
+  const [broken, setBroken] = useState(false);
+  if (image && !broken) {
+    return (
+      <img
+        src={image}
+        alt=""
+        aria-hidden="true"
+        onError={() => setBroken(true)}
+        style={{
+          width: "100%",
+          height: "116px",
+          objectFit: "cover",
+          display: "block",
+          margin: "2px 0 0",
+          borderRadius: "2px",
+          border: "1px solid rgba(42,38,32,.28)",
+          boxSizing: "border-box",
+        }}
+      />
+    );
+  }
   return (
     <svg viewBox="0 0 64 64" style={{ width: "100%", height: "82px", display: "block", margin: "2px 0 0" }} aria-hidden="true">
       <g
@@ -130,6 +154,17 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
   const [faces, setFaces] = useState([null, null, null, null]);
   const [settled, setSettled] = useState([false, false, false, false]);
   const [celebrate, setCelebrate] = useState([false, false, false, false]);
+
+  // Warm the browser cache for every illustrated plate the moment the draft
+  // opens, so a card never settles before its artwork has arrived — the
+  // slot-machine landing is the showcase moment and must not pop in.
+  useEffect(() => {
+    SURVIVOR_SLOTS.forEach((s) =>
+      s.items.forEach((item) => {
+        if (item.image) new Image().src = item.image;
+      })
+    );
+  }, []);
 
   useEffect(() => {
     if (phase !== "rolling") return;
@@ -325,7 +360,7 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
                       <div style={{ fontSize: "9px", letterSpacing: "1.5px", color: t.rarityColors(rarity).text, textAlign: "left" }}>
                         {t.RARITY_LABEL[rarity]}
                       </div>
-                      <SketchArt art={displayCard.art} />
+                      <SketchArt art={displayCard.art} image={displayCard.image} />
                       <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "1.2px", color: t.ink, marginTop: "8px" }}>
                         {displayCard.name.toUpperCase()}
                       </div>

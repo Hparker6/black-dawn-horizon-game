@@ -21,23 +21,27 @@
 // wrapper in Draft.jsx) — hand-drawn field-journal sketches, not emoji, so
 // the draft pages read as pages from the same notebook as everything else.
 // All strings are static/local; nothing user-supplied ever lands in them.
+//
+// `image` (optional) is an illustrated plate in public/art/ — ink-on-parchment
+// artwork rendered in place of the SVG sketch when present. The SVG stays as
+// the fallback if the image fails to load, so a card is never blank.
 
 export const WEAPONS = [
-  { id: 'crossbow', rarity: 'jackpot', name: 'The Crossbow', line: 'Quiet leaves no witnesses.', traits: ['Ranged'],
+  { id: 'crossbow', rarity: 'jackpot', name: 'The Crossbow', line: 'Quiet leaves no witnesses.', traits: ['Ranged'], image: '/art/crossbow.jpg',
     art: `<path d="M12 22 Q32 4 52 22"/><path d="M12 22 L52 22"/><path d="M32 8 L32 52"/><path d="M27 48 L32 42 L37 48"/><path d="M27 52 L37 52"/>` },
-  { id: 'revolver', rarity: 'rare', name: 'The Revolver', line: 'Six answers. Choose the questions.', traits: ['Ranged'],
+  { id: 'revolver', rarity: 'rare', name: 'The Revolver', line: 'Six answers. Choose the questions.', traits: ['Ranged'], image: '/art/revolver.jpg',
     art: `<path d="M10 22 H54 V28 H36"/><circle cx="28" cy="28" r="6"/><path d="M23 32 L15 48 L23 51 L29 36"/><path d="M31 34 q1 6 8 6"/><path d="M10 22 V27"/>` },
-  { id: 'crowbar', rarity: 'common', name: 'The Crowbar', line: 'Every door becomes a suggestion.', traits: ['PryOpen'],
+  { id: 'crowbar', rarity: 'common', name: 'The Crowbar', line: 'Every door becomes a suggestion.', traits: ['PryOpen'], image: '/art/crowbar.jpg',
     art: `<path d="M22 54 L46 18 C51 10 42 5 38 12 L36 16"/><path d="M17 49 L27 58"/>` },
-  { id: 'hatchet', rarity: 'common', name: 'The Hatchet', line: "Fences, firewood, whatever's next.", traits: ['Fire'],
+  { id: 'hatchet', rarity: 'common', name: 'The Hatchet', line: "Fences, firewood, whatever's next.", traits: ['Fire'], image: '/art/hatchet.jpg',
     art: `<path d="M40 14 L20 56"/><path d="M35 7 L52 15 C50 26 41 29 33 24 Z"/>` },
-  { id: 'rifle', rarity: 'ultra', name: 'The Hunting Rifle', line: 'One shot, from a long way off.', traits: ['Ranged'],
+  { id: 'rifle', rarity: 'ultra', name: 'The Hunting Rifle', line: 'One shot, from a long way off.', traits: ['Ranged'], image: '/art/rifle.jpg',
     art: `<path d="M6 34 L40 30"/><path d="M40 28 L56 32 L52 44 L44 38 L41 34"/><path d="M20 33 L22 41"/><rect x="25" y="21" width="12" height="5" rx="2"/><path d="M31 26 L31 30"/>` },
-  { id: 'shotgun', rarity: 'common', name: 'The Shotgun', line: 'The sound alone ends arguments.', traits: [],
+  { id: 'shotgun', rarity: 'common', name: 'The Shotgun', line: 'The sound alone ends arguments.', traits: [], image: '/art/shotgun.jpg',
     art: `<path d="M6 30 H38"/><path d="M6 34 H38"/><path d="M16 34 L14 41 H26 L26 34"/><path d="M38 28 L56 34 L52 45 L40 36 Z"/>` },
-  { id: 'spear', rarity: 'common', name: 'The Spear', line: 'Reach, silence, and steady hands.', traits: [],
+  { id: 'spear', rarity: 'common', name: 'The Spear', line: 'Reach, silence, and steady hands.', traits: [], image: '/art/spear.jpg',
     art: `<path d="M14 58 L44 18"/><path d="M44 18 L42 6 L54 12 Z"/><path d="M37 25 L43 30"/><path d="M34 29 L40 34"/>` },
-  { id: 'machete', rarity: 'common', name: 'The Machete', line: 'Never jams. Never empty.', traits: [],
+  { id: 'machete', rarity: 'common', name: 'The Machete', line: 'Never jams. Never empty.', traits: [], image: '/art/machete.jpg',
     art: `<path d="M15 44 C28 46 42 38 52 22 L44 14 C36 28 26 35 17 35 Z"/><path d="M9 53 L16 43"/>` },
 ];
 
