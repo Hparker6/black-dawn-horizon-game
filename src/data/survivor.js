@@ -46,21 +46,21 @@ export const WEAPONS = [
 ];
 
 export const COMPANIONS = [
-  { id: 'mechanic', rarity: 'common', name: 'The Mechanic', line: "If it's broken, she's interested.", traits: ['Signal', 'Purify'],
+  { id: 'mechanic', rarity: 'common', name: 'The Mechanic', line: "If it's broken, she's interested.", traits: ['Signal', 'Purify'], image: '/art/mechanic.jpg',
     art: `<circle cx="24" cy="22" r="8"/><circle cx="24" cy="22" r="2.5"/><path d="M24 11 V6 M24 33 V38 M13 22 H8 M35 22 H40 M16 14 L13 11 M32 30 L35 33 M32 14 L35 11 M16 30 L13 33"/><path d="M38 36 L52 50 M45 43 l7 -7"/>` },
-  { id: 'nurse', rarity: 'rare', name: 'The Nurse', line: 'Every life still counts. Yours too.', traits: ['Heal', 'Cure'],
+  { id: 'nurse', rarity: 'rare', name: 'The Nurse', line: 'Every life still counts. Yours too.', traits: ['Heal', 'Cure'], image: '/art/nurse.jpg',
     art: `<circle cx="32" cy="32" r="18"/><path d="M32 21 V43 M21 32 H43"/>` },
-  { id: 'hunter', rarity: 'common', name: 'The Hunter', line: 'Reads the ground like a headline.', traits: ['Scout'],
+  { id: 'hunter', rarity: 'common', name: 'The Hunter', line: 'Reads the ground like a headline.', traits: ['Scout'], image: '/art/hunter.jpg',
     art: `<path d="M32 56 V32"/><path d="M32 36 C24 34 20 27 20 15 M25 27 L18 25 M23 21 L16 21"/><path d="M32 36 C40 34 44 27 44 15 M39 27 L46 25 M41 21 L48 21"/>` },
-  { id: 'officer', rarity: 'common', name: 'The Retired Officer', line: 'Twenty years of talking people down.', traits: ['Navigate'],
+  { id: 'officer', rarity: 'common', name: 'The Retired Officer', line: 'Twenty years of talking people down.', traits: ['Navigate'], image: '/art/officer.jpg',
     art: `<path d="M32 8 L50 14 V30 C50 44 42 52 32 56 C22 52 14 44 14 30 V14 Z"/><path d="M32 22 l5 10 h-10 Z"/><path d="M24 42 H40"/>` },
-  { id: 'seal', rarity: 'ultra', name: 'The Navy SEAL', line: 'The beach is just another Tuesday.', traits: [],
+  { id: 'seal', rarity: 'ultra', name: 'The Navy SEAL', line: 'The beach is just another Tuesday.', traits: [], image: '/art/seal.jpg',
     art: `<path d="M32 10 V56"/><path d="M20 14 V24 C20 32 26 34 32 34 C38 34 44 32 44 24 V14"/><path d="M20 14 l-3 5 M44 14 l3 5 M32 10 l-4 5 M32 10 l4 5"/>` },
-  { id: 'dog', rarity: 'jackpot', name: 'The Dog', line: 'Hears trouble before it exists.', traits: [],
+  { id: 'dog', rarity: 'jackpot', name: 'The Dog', line: 'Hears trouble before it exists.', traits: [], image: '/art/dog.jpg',
     art: `<circle cx="20" cy="20" r="4.5"/><circle cx="32" cy="16" r="4.5"/><circle cx="44" cy="20" r="4.5"/><path d="M21 44 C21 36 26 31 32 31 C38 31 43 36 43 44 C43 52 21 52 21 44 Z"/>` },
-  { id: 'teenager', rarity: 'common', name: 'The Teenager', line: 'Fearless, fast, and up anything vertical.', traits: [],
+  { id: 'teenager', rarity: 'common', name: 'The Teenager', line: 'Fearless, fast, and up anything vertical.', traits: [], image: '/art/teenager.jpg',
     art: `<path d="M10 34 C12 41 16 43 21 43 H43 C48 43 52 41 54 34"/><circle cx="24" cy="50" r="4"/><circle cx="41" cy="50" r="4"/><path d="M17 43 V47 M47 43 V47"/>` },
-  { id: 'journalist', rarity: 'common', name: 'The Journalist', line: 'Words still open doors.', traits: [],
+  { id: 'journalist', rarity: 'common', name: 'The Journalist', line: 'Words still open doors.', traits: [], image: '/art/journalist.jpg',
     art: `<rect x="10" y="22" width="44" height="28" rx="3"/><circle cx="32" cy="36" r="9"/><circle cx="32" cy="36" r="4"/><path d="M22 22 L26 14 H38 L42 22"/><path d="M47 28 l1.5 0"/>` },
 ];
 
