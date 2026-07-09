@@ -147,12 +147,15 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              filter: "saturate(.75) sepia(.12)",
-              opacity: 0.5,
+              filter: "saturate(.82) sepia(.08)",
+              opacity: 0.82,
               userSelect: "none",
             }}
           />
-          <div style={{ position: "absolute", inset: 0, background: `radial-gradient(115% 115% at 50% 45%, transparent 42%, ${t.paper} 97%)`, opacity: 0.9 }} />
+          {/* Gentle edge feather only — the art carries its own aged-paper
+              border, so this just melts the cover-crop into the panel
+              instead of washing the whole illustration out. */}
+          <div style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 120% at 50% 45%, transparent 62%, ${t.paper} 100%)`, opacity: 0.45 }} />
         </div>
       )}
 
@@ -177,7 +180,8 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
 
         {/* The parchment veil: translucent paper wash + feathered halo (the
             boxShadow) so it reads as a cleaner patch of the same page, not a
-            card sitting on top of it. */}
+            card sitting on top of it. Halo kept tight — over background
+            artwork a wide bleed whites out half the illustration. */}
         <div
           style={{
             alignSelf: "center",
@@ -186,7 +190,7 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
             width: "100%",
             textAlign: "center",
             background: "rgba(250,246,236,.72)",
-            boxShadow: "0 0 30px 22px rgba(250,246,236,.72)",
+            boxShadow: "0 0 16px 10px rgba(250,246,236,.6)",
             borderRadius: "8px",
             padding: "34px 38px",
             boxSizing: "border-box",
