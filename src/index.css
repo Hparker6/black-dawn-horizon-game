@@ -42,6 +42,19 @@ body {
     opacity: 0;
   }
 }
+/* The incoming half of the same cut: fades 0->1 in lockstep with
+   bdhPageDissolve (same duration) so the two together read as one true
+   crossfade — no gap where the outgoing page has finished fading before the
+   incoming page's own content has arrived, which is what read as a "flash"
+   of bare paper between pages. */
+@keyframes bdhPageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @keyframes bdhSlip {
   from {
     opacity: 0;

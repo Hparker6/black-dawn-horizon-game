@@ -186,21 +186,22 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
         </Reveal>
         <div style={{ height: "1px", background: t.borderSubtle, margin: "14px 0 auto" }} />
 
+        <div style={{ flex: 1 }} />
         {/* The parchment veil: translucent paper wash + feathered halo (the
             boxShadow) so it reads as a cleaner patch of the same page, not a
-            card sitting on top of it. Halo kept tight — over background
-            artwork a wide bleed whites out half the illustration. */}
+            card sitting on top of it. Docked to the bottom edge as a full
+            width strip (rather than a centered card) so the art reads
+            uninterrupted above it and the log sits like a caption. */}
         <div
           style={{
-            alignSelf: "center",
-            margin: "28px 0",
-            maxWidth: "620px",
+            alignSelf: "stretch",
+            margin: "0 0 8px",
             width: "100%",
             textAlign: "center",
             background: "rgba(250,246,236,.72)",
             boxShadow: "0 0 16px 10px rgba(250,246,236,.6)",
             borderRadius: "8px",
-            padding: "34px 38px",
+            padding: "28px 38px",
             boxSizing: "border-box",
           }}
         >
