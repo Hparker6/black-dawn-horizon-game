@@ -14,9 +14,12 @@ const SAVE_KEY = "bdh_save";
 const LEGACY_KEYS = { best: "bdh_best", played: "bdh_played", ach: "bdh_ach", endings: "bdh_endings" };
 
 function defaultSave() {
-  return { version: SAVE_VERSION, best: 0, played: 0, ach: [], endings: [], seenIntro: false };
+  return { version: SAVE_VERSION, best: 0, played: 0, ach: [], endings: [] };
 }
 
+// A `seenIntro` boolean briefly lived in this schema (the intro was once
+// once-per-browser); the intro now plays every run, so migrate() simply
+// drops the field from any save that still carries it.
 function migrate(raw) {
   const base = defaultSave();
   if (!raw || typeof raw !== "object") return base;
@@ -26,12 +29,6 @@ function migrate(raw) {
     played: Number.isFinite(raw.played) ? raw.played : base.played,
     ach: Array.isArray(raw.ach) ? raw.ach : base.ach,
     endings: Array.isArray(raw.endings) ? raw.endings : base.endings,
-    // Added after v1 shipped; a save written before this existed just has
-    // no seenIntro key, so `!!raw.seenIntro` falls through to false — a
-    // pre-existing save from before the intro was added correctly plays it
-    // once, same as a first-time player, rather than crashing on the
-    // missing field.
-    seenIntro: !!raw.seenIntro,
   };
 }
 

@@ -1,27 +1,36 @@
-// Short atmospheric beats shown once (per engine/save.js's seenIntro flag)
-// before a run's first draft round. Each screen is one recovered-log entry
-// — terse, present tense, second person — advanced only by a deliberate
-// tap (see screens/Intro.jsx), same rule as everything else in this game.
-// The route choice is the last beat, not part of this array, since it
-// renders as two buttons instead of a tap-anywhere continue.
+// Short atmospheric beats shown at the start of every run, before the route
+// choice. Each screen is one recovered-log entry — terse, present tense,
+// second person — advanced only by a deliberate tap (see screens/Intro.jsx),
+// same rule as everything else in this game. The route choice is the last
+// beat, not part of this array, since it renders as two buttons instead of
+// a tap-anywhere continue.
+//
+// Exactly two beats, by design: outbreak lore, then the leaving-home
+// cinematic — so BEGIN -> lore -> image -> route choice is three pages
+// total. The lore beat carries both the outbreak (what happened) and the
+// coast-guard rumor (why you're driving toward the coast), which used to be
+// two separate text pages.
 //
 // `type` picks which screen component renders it (Intro.jsx): 'text'
-// (default, omitted on the two original entries) gets the shared
-// journal-page chrome (RECOVERED LOG header, skip link, ruled dividers).
-// 'image' is a one-off full-bleed cinematic beat — its own component, no
-// shared chrome at all — so it can't accidentally inherit paper-page
-// styling meant for plain text beats.
-// Exactly two lore pages before the route choice — the ruined city, then
-// leaving home — so the full flow reads: main menu → BEGIN → these two
-// pages → highways-or-backroads → draft → events → ending. The coast guard
-// rumor folded into page one so nothing sits between Leaving Home and the
-// route decision.
+// (default, omitted on the lore entry) gets the shared journal-page chrome
+// (RECOVERED LOG header, skip link, ruled dividers). 'image' is a one-off
+// full-bleed cinematic beat — its own component, no shared chrome at all —
+// so it can't accidentally inherit paper-page styling meant for plain text
+// beats.
 export const INTRO_SCREENS = [
   {
+    title: "THE OUTBREAK",
+    // Full-page background artwork (the fallen city) rendered behind the
+    // log text by AtmosphereScreen — dimmed, desaturated, and feathered
+    // into the paper at the edges so the words stay the focus and the art
+    // reads as part of the same recovered page, not a backdrop swap.
+    art: "/outbreak-city.jpg",
     body: [
-      "Three weeks since the grid failed.",
-      "The city didn't take it well.",
+      "Three weeks since the outbreak.",
+      "The grid failed. The cities fell.",
+      "The dead didn't stay dead.",
       "They say the coast guard station still runs — lights, a working radio, maybe a way out.",
+      "Maybe.",
     ],
   },
   {

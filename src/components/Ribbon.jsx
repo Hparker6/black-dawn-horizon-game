@@ -1,9 +1,5 @@
 import * as t from "../styles/tokens.js";
 
-// Sprint 3: nav reads as paper index tabs sticking up from the journal, not
-// website navigation. The active tab is the page you're on — full paper,
-// flush with the panel below; inactive tabs are older, dimmer paper sitting
-// slightly lower in the stack. No underlines, no accent bars.
 function navStyle(active) {
   return {
     flex: 1,
@@ -21,15 +17,12 @@ function navStyle(active) {
     fontFamily: t.fontBody,
     fontSize: "12px",
     letterSpacing: "1.5px",
-    padding: active ? "11px 4px 10px" : "8px 4px 7px",
-    marginTop: active ? 0 : "5px",
-    border: active ? "1px solid rgba(20,16,12,.25)" : "1px solid rgba(20,16,12,.35)",
-    borderBottom: "none",
-    borderRadius: "4px 4px 0 0",
-    background: active ? t.paper : "#c9bc9e",
-    color: active ? t.ink : "#5f5744",
-    boxShadow: active ? "0 -2px 6px -2px rgba(0,0,0,.4)" : "inset 0 -6px 8px -8px rgba(0,0,0,.55)",
-    transition: "background .2s ease, margin-top .2s ease, padding .2s ease",
+    padding: "10px 4px",
+    border: "none",
+    borderRadius: "3px 3px 0 0",
+    background: active ? t.paper : "transparent",
+    color: active ? t.ink : t.rankMuted,
+    borderBottom: active ? `3px solid ${t.blood}` : "3px solid transparent",
   };
 }
 

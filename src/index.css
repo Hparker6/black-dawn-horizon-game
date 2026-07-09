@@ -30,18 +30,16 @@ body {
     opacity: 1;
   }
 }
-/* Intro.jsx's "Leaving Home" cinematic beat: hinges from the right edge
-   (transform-origin set on the element itself) like a page lifting and
-   turning away to reveal what's next, rather than a flat cross-fade — kept
-   brief and modest in angle so it reads as a page turn, not a slide/wipe. */
-@keyframes bdhPageTurnOut {
-  0% {
+/* Page dissolve (components/PageTransition.jsx): the outgoing page simply
+   dissolves over the incoming one — a quiet film cut rather than a staged
+   flip; the incoming page's own staggered reveals carry the arrival.
+   Opacity-only, runs on the compositor. */
+@keyframes bdhPageDissolve {
+  from {
     opacity: 1;
-    transform: perspective(1400px) rotateY(0deg);
   }
-  100% {
+  to {
     opacity: 0;
-    transform: perspective(1400px) rotateY(-24deg);
   }
 }
 @keyframes bdhSlip {

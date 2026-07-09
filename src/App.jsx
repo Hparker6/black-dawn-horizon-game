@@ -64,10 +64,6 @@ function initialState() {
     played: 0,
     ach: [],
     endingsFound: [],
-    // Whether this browser has ever finished/skipped the intro before (see
-    // engine/save.js) — read at BEGIN to decide whether onPlay lands on the
-    // first atmosphere screen or skips straight to the route choice.
-    seenIntro: false,
     introStep: 0,
     draftRound: 0,
     // Slot-machine identity draft: each round ROLLS 4 of the slot's 8
@@ -142,7 +138,7 @@ export default function App() {
 
   useEffect(() => {
     const save = loadSave();
-    setState((prev) => ({ ...prev, best: save.best, played: save.played, ach: save.ach, endingsFound: save.endings, seenIntro: save.seenIntro }));
+    setState((prev) => ({ ...prev, best: save.best, played: save.played, ach: save.ach, endingsFound: save.endings }));
   }, []);
 
   // Catches the "just closed the tab" quit — the one onExitToTitle can't
@@ -176,12 +172,13 @@ export default function App() {
   const onTabEndings = () => setState((prev) => ({ ...prev, tab: "endings" }));
 
   // ---------- intro + draft flow ----------
-  // Lands on the first atmosphere screen for a first-time browser, or
-  // straight on the route choice (introStep === INTRO_SCREENS.length) for
-  // one that's already seen it — the choice itself is never skipped, only
-  // the lore leading up to it. flags reset here (before the route choice
-  // even runs) so the chosen route is the only flag present when the run
-  // actually starts.
+  // Every run opens on the first atmosphere screen — the intro used to be
+  // once-per-browser (a persisted seenIntro flag), but the flag was only
+  // sometimes rewritten at run end, so whether a returning player saw the
+  // lore was effectively random. Now it always plays, and the SKIP INTRO
+  // link on the lore page is the one way to jump ahead. flags reset here
+  // (before the route choice even runs) so the chosen route is the only
+  // flag present when the run actually starts.
   const onPlay = () => {
     trackEvent("run_started", { difficulty: DIFFICULTY });
     const m = diff(DIFFICULTY);
@@ -189,7 +186,7 @@ export default function App() {
       ...prev,
       tab: "survival",
       screen: "intro",
-      introStep: prev.seenIntro ? INTRO_SCREENS.length : 0,
+      introStep: 0,
       draftRound: 0,
       draftPhase: "idle",
       draftCards: [],
@@ -212,14 +209,10 @@ export default function App() {
   // Ends the intro: the chosen route becomes a normal run flag (read by
   // engine/pacing.js's routeFromFlags wherever pickNextEvent/applyResult
   // already read flags — no other state here needs to know about routes at
-  // all) and seenIntro is persisted immediately, not deferred to run end,
-  // so quitting mid-run still counts as "has seen it" for next time.
+  // all).
   const onChooseRoute = (routeFlag) => {
     trackEvent("route_chosen", { route: routeFlag });
-    if (!state.seenIntro) {
-      writeSave({ best: state.best, played: state.played, ach: state.ach, endings: state.endingsFound, seenIntro: true });
-    }
-    setState((prev) => ({ ...prev, seenIntro: true, flags: [...prev.flags, routeFlag], screen: "spin" }));
+    setState((prev) => ({ ...prev, flags: [...prev.flags, routeFlag], screen: "spin" }));
   };
 
   // Abandons the in-progress run (no localStorage write, no achievement/best

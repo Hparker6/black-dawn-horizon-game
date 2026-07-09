@@ -16,21 +16,12 @@ function dangerLevel(hp, hpMax) {
   return Math.max(0, Math.min(1, 1 - hp / hurtAt));
 }
 
-// One spiral ring of the journal's binding, tiled down the left edge below:
-// a punched hole in the paper plus the wire looping out through it. Drawn
-// as a data-URI so it can repeat-y like a texture instead of rendering a
-// list of elements. Static, handcrafted, never animated.
-const SPIRAL_RING_BG =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='36'%3E%3Cellipse cx='13' cy='18' rx='9' ry='6' fill='none' stroke='%236f675a' stroke-width='2'/%3E%3Ccircle cx='19' cy='18' r='3.4' fill='%2314100c' fill-opacity='.5'/%3E%3C/svg%3E\")";
-
-// Sprint 3: the panel is no longer an abstract paper rectangle — it's a
-// physical field journal. Three quiet cues, all static: a spiral binding
-// down the left edge (rings above, a shadowed gutter under them), a stack
-// of pages peeking out beneath the bottom edge (layered hairline shadows),
-// and a faint fiber texture across the paper itself. Content clears the
-// binding via the inner wrapper's left padding.
+// Sprint 3 (revised): two quiet physical cues, both static — a stack of
+// pages peeking out beneath the bottom edge (layered hairline shadows) and
+// a faint fiber texture across the paper itself. The spiral-binding strip
+// that briefly lived on the left edge is gone: it fought every full-bleed
+// art page (intro, route select) and read as a stray white column.
 const PAGE_STACK_SHADOW = "0 1px 0 #fbf7ee inset, 0 2px 0 #e6dcc6, 0 5px 0 #d9cdb2, 0 8px 0 #c9bc9e, 0 9px 14px -4px rgba(0,0,0,.5)";
-const BINDING_WIDTH = 30;
 
 // Wraps the journal panel so its own condition (hp/hpMax) drives tasteful
 // tension cues that escalate with how close to death the run is: a
@@ -93,27 +84,7 @@ export default function DangerAtmosphere({ hp, hpMax, reduceMotion, children }) 
             backgroundImage: t.noiseOverlayBg,
           }}
         />
-        {/* Spiral binding: shadowed gutter + tiled wire rings down the left
-            edge. Sits above the page texture but below the danger vignette. */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: 0,
-            width: `${BINDING_WIDTH}px`,
-            zIndex: 2,
-            pointerEvents: "none",
-            background: `linear-gradient(90deg, rgba(20,16,12,.10) 0, rgba(20,16,12,.045) 55%, transparent 100%)`,
-            backgroundImage: `${SPIRAL_RING_BG}, linear-gradient(90deg, rgba(20,16,12,.10) 0, rgba(20,16,12,.045) 55%, transparent 100%)`,
-            backgroundRepeat: "repeat-y, no-repeat",
-            backgroundPosition: "0 10px, 0 0",
-            backgroundSize: "30px 36px, 100% 100%",
-          }}
-        />
-        {/* Content clears the binding so no text ever sits under the rings. */}
-        <div style={{ position: "relative", zIndex: 3, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, paddingLeft: `${BINDING_WIDTH}px` }}>
+        <div style={{ position: "relative", zIndex: 3, display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {children}
         </div>
         {level > 0 && (
