@@ -1,7 +1,7 @@
 import * as t from "../styles/tokens.js";
 import { INTRO_SCREENS } from "../data/intro.js";
 import RouteSelect from "./RouteSelect.jsx";
-import PageTurner from "../components/PageTurner.jsx";
+import PageTransition from "../components/PageTransition.jsx";
 import Reveal from "../components/Reveal.jsx";
 import { prefersReducedMotion } from "../engine/motion.js";
 
@@ -15,16 +15,16 @@ const LORE_SHADOW = "0 1px 0 rgba(255,255,255,.45)";
 // finish just as the page-turn that delivered the page completes.
 const REVEAL_STEP_MS = 130;
 
-// A one-off cinematic beat, not a journal page — the artwork is the entire
-// visual focus, so this deliberately shares none of AtmosphereScreen's
-// chrome (no RECOVERED LOG header, no skip link, no ruled dividers). The
-// panel it renders into is normally paper-colored (DangerAtmosphere.jsx);
-// this fills that same flex slot with the app's own outer dark gradient
-// instead, so for this one beat the "page" reads as a dark, cinematic frame
-// rather than a page in the journal. Advances on click/tap anywhere — the
-// page-turn itself is PageTurner's job (see the export below), not this
-// component's. Entrance is staggered: artwork first, then the journal
-// lines land one at a time (reading pace), then the continue hint.
+// A one-off cinematic beat, not a log page — no RECOVERED LOG header, no
+// skip link, no ruled dividers; the artwork is the page. Same full-bleed
+// treatment as the lore page's background so the two beats read as a set,
+// but here the art runs at full strength (it IS the content) and the
+// journal fragments sit on a parchment veil in the character's hand —
+// dark ink on paper, not white script fighting the illustration. Advances
+// on click/tap anywhere; the change of pages is PageTransition's job (see
+// the export below), not this component's. Entrance is staggered: artwork
+// first, then the journal lines land one at a time (reading pace), then
+// the continue hint.
 function LeavingHomeScreen({ screen, onContinue }) {
   const lineDelay = (i) => 450 + i * 2 * REVEAL_STEP_MS;
   const continueDelay = lineDelay(screen.journal.length) + 250;
@@ -37,50 +37,45 @@ function LeavingHomeScreen({ screen, onContinue }) {
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onContinue();
       }}
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "26px",
-        padding: "28px",
-        cursor: "pointer",
-        background: t.bgGradient,
-        animation: "bdhOverlay .5s ease both",
-      }}
+      style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", padding: "40px 34px 30px", cursor: "pointer" }}
     >
-      {/* Sized to the image's own rendered box (inline-block shrink-wraps
-          to it), so the text overlay below can anchor to the art's actual
-          visible edges instead of guessing at letterboxed empty space. */}
-      <Reveal duration={700} style={{ position: "relative", display: "inline-block", maxWidth: "94%" }}>
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", animation: prefersReducedMotion() ? "none" : "bdhOverlay .8s ease both" }}>
         <img
           src={screen.image}
           alt={screen.imageAlt}
+          decoding="async"
           draggable={false}
-          style={{
-            display: "block",
-            maxWidth: "100%",
-            maxHeight: "72vh",
-            width: "auto",
-            height: "auto",
-            objectFit: "contain",
-            boxShadow: "0 30px 70px -20px rgba(0,0,0,.75)",
-            userSelect: "none",
-          }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", userSelect: "none" }}
         />
-        <div style={{ position: "absolute", left: "6%", bottom: "9%", width: "clamp(280px,38vw,420px)", maxWidth: "82%" }}>
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1 }} />
+        {/* Journal fragments, bottom-left over the open grass — same
+            parchment-veil treatment as the lore page so the handwriting
+            stays readable no matter how the cover-crop lands. */}
+        <div
+          style={{
+            alignSelf: "flex-start",
+            maxWidth: "420px",
+            background: "rgba(250,246,236,.68)",
+            boxShadow: "0 0 16px 10px rgba(250,246,236,.55)",
+            borderRadius: "8px",
+            padding: "20px 26px",
+            boxSizing: "border-box",
+          }}
+        >
           {screen.journal.map((line, i) => (
             <Reveal key={i} delay={lineDelay(i)} duration={650}>
               <p
                 style={{
                   margin: i === 0 ? 0 : "12px 0 0",
                   fontFamily: t.fontHand,
-                  fontWeight: 500,
-                  fontSize: "clamp(17px,2.2vw,22px)",
-                  lineHeight: 1.55,
-                  color: "#f4efe4",
-                  textShadow: "0 2px 6px rgba(0,0,0,.85), 0 1px 12px rgba(0,0,0,.6)",
+                  fontWeight: 600,
+                  fontSize: "clamp(19px,2.3vw,24px)",
+                  lineHeight: 1.5,
+                  color: LORE_INK,
+                  textShadow: LORE_SHADOW,
                 }}
               >
                 {line}
@@ -88,10 +83,23 @@ function LeavingHomeScreen({ screen, onContinue }) {
             </Reveal>
           ))}
         </div>
-      </Reveal>
-      <Reveal delay={continueDelay}>
-        <div style={{ fontSize: "11px", letterSpacing: "1px", color: "rgba(244,239,228,.5)" }}>Click anywhere to continue</div>
-      </Reveal>
+        <Reveal delay={continueDelay} style={{ textAlign: "center", marginTop: "18px" }}>
+          <div
+            style={{
+              display: "inline-block",
+              padding: "6px 16px",
+              background: "rgba(250,246,236,.68)",
+              boxShadow: "0 0 14px 10px rgba(250,246,236,.55)",
+              borderRadius: "6px",
+              fontSize: "12px",
+              letterSpacing: "2px",
+              color: t.rankMuted,
+            }}
+          >
+            TAP TO CONTINUE &rsaquo;
+          </div>
+        </Reveal>
+      </div>
     </div>
   );
 }
@@ -263,9 +271,9 @@ function AtmosphereScreen({ screen, onContinue, onSkip, showSkip }) {
 // skipped — it's a real per-run decision, not lore.
 //
 // Every advance within the intro — including a skip jumping several steps —
-// is one PageTurner turn: the old page physically lifts away and the next
-// is revealed beneath it. The first page after BEGIN doesn't turn (there's
-// no page before it); it enters through its own staggered reveals.
+// is one PageTransition dissolve: the old page fades over the next, whose
+// staggered reveals carry the arrival. The first page after BEGIN doesn't
+// dissolve (there's no page before it); it enters through its reveals.
 export default function Intro({ step, onContinue, onSkip, onChooseRoute }) {
   const atRoute = step >= INTRO_SCREENS.length;
   let page;
@@ -280,5 +288,5 @@ export default function Intro({ step, onContinue, onSkip, onChooseRoute }) {
         <AtmosphereScreen screen={screen} onContinue={onContinue} onSkip={onSkip} showSkip />
       );
   }
-  return <PageTurner turnKey={atRoute ? INTRO_SCREENS.length : step}>{page}</PageTurner>;
+  return <PageTransition turnKey={atRoute ? INTRO_SCREENS.length : step}>{page}</PageTransition>;
 }

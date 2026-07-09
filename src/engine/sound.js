@@ -14,7 +14,7 @@ function audioContext() {
   return ctx;
 }
 
-// A soft paper "whoosh" for page turns (components/PageTurner.jsx): a short
+// A soft paper "whoosh" for page changes (components/PageTransition.jsx): a short
 // noise burst swept through a bandpass filter — rising then settling pitch
 // reads as a sheet flexing through the air. Kept quiet (peak gain .09) so
 // it registers as texture, not a sound effect demanding attention.

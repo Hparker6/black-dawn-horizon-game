@@ -55,6 +55,9 @@ function RouteCard({ opt, phase, selectedFlag, onSelect }) {
         cursor: disabled ? "default" : "pointer",
         opacity: faded ? 0.32 : 1,
         transition: "opacity .4s ease",
+        // Size container so the text rows below can scale in cqh — i.e.
+        // with the rendered card itself, not the viewport.
+        containerType: "size",
       }}
       disabled={disabled}
       onClick={() => onSelect(opt.flag)}
@@ -72,21 +75,29 @@ function RouteCard({ opt, phase, selectedFlag, onSelect }) {
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          gap: "1.1%",
+          gap: "2px",
           overflow: "hidden",
         }}
       >
-        <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "clamp(12px,1.6vw,17px)", letterSpacing: "2px", color: "#1a1208" }}>{opt.title}</div>
-        <div style={{ fontFamily: t.fontHand, fontWeight: 600, fontSize: "clamp(11px,1.3vw,14px)", color: "#3a2e1c" }}>{opt.tagline}</div>
-        <div style={{ fontFamily: t.fontHand, fontSize: "clamp(10px,1.15vw,13px)", lineHeight: 1.2, color: "#2a2013" }}>{opt.intro}</div>
-        <div style={{ fontFamily: t.fontHand, fontSize: "clamp(10px,1.15vw,13px)", lineHeight: 1.2, color: "#2a2013" }}>
+        {/* Fonts in cqh (fractions of the rendered card's height, via the
+            button's containerType above) capped at the desktop px sizes:
+            the text band is a fixed 17%-of-card strip of blank paper, and
+            viewport-based clamps let the text outgrow it whenever the
+            notebook rendered small (height-bound short windows), clipping
+            the title against the illustration and the button against the
+            card's bottom edge. Sized against the card, the six rows fit
+            the band at any window size by construction. */}
+        <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "min(2.7cqh,17px)", letterSpacing: "2px", color: "#1a1208" }}>{opt.title}</div>
+        <div style={{ fontFamily: t.fontHand, fontWeight: 600, fontSize: "min(2.2cqh,14px)", color: "#3a2e1c" }}>{opt.tagline}</div>
+        <div style={{ fontFamily: t.fontHand, fontSize: "min(2cqh,13px)", lineHeight: 1.2, color: "#2a2013" }}>{opt.intro}</div>
+        <div style={{ fontFamily: t.fontHand, fontSize: "min(2cqh,13px)", lineHeight: 1.2, color: "#2a2013" }}>
           {opt.fragments.join("  ")}
         </div>
-        <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "clamp(9px,1vw,12px)", letterSpacing: "1px", color: t.goldDark }}>{opt.stat}</div>
+        <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "min(1.8cqh,12px)", letterSpacing: "1px", color: t.goldDark }}>{opt.stat}</div>
         <div
           style={{
             fontFamily: t.fontBody,
-            fontSize: "clamp(10px,1.15vw,13px)",
+            fontSize: "min(2cqh,13px)",
             letterSpacing: ".5px",
             color: "#1a1208",
             borderBottom: "1px solid rgba(26,18,8,.5)",
@@ -126,7 +137,9 @@ export default function RouteSelect({ onChooseRoute }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "24px",
+        // Slim gutter only — the notebook should fill the panel like the
+        // full-bleed intro beats before it, not float in a dark letterbox.
+        padding: "12px",
         // A dark wood-desk surface (no literal texture asset — the art
         // itself has none baked in) so the notebook reads as a physical
         // object someone set down and opened, not a UI panel. Grain reuses
@@ -138,7 +151,7 @@ export default function RouteSelect({ onChooseRoute }) {
         transition: `opacity ${DISSOLVE_MS}ms ease`,
       }}
     >
-      <div style={{ position: "relative", display: "inline-block", maxWidth: "96%" }}>
+      <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
         <img
           src="/route-select.jpg"
           alt="An open spiral notebook. The left page shows a gridlocked highway choked with traffic and smoke; the right page shows a quiet backroad past a church and an old gas station."
@@ -146,7 +159,7 @@ export default function RouteSelect({ onChooseRoute }) {
           style={{
             display: "block",
             maxWidth: "100%",
-            maxHeight: "82vh",
+            maxHeight: "84vh",
             width: "auto",
             height: "auto",
             objectFit: "contain",
