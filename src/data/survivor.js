@@ -27,7 +27,12 @@
 // the fallback if the image fails to load, so a card is never blank.
 
 export const WEAPONS = [
-  { id: 'crossbow', rarity: 'jackpot', name: 'The Crossbow', line: 'Quiet leaves no witnesses.', traits: ['Ranged'], image: '/art/crossbow.jpg',
+  // The three ranged weapons deliberately don't collapse into one trait:
+  // the revolver and rifle are Ranged and loud; the crossbow is Ranged AND
+  // Silent — the stealth pull. Silent gates its own event choices (quiet
+  // kills that never draw the horde), so the jackpot pull plays differently,
+  // not just looks different.
+  { id: 'crossbow', rarity: 'jackpot', name: 'The Crossbow', line: 'Quiet leaves no witnesses.', traits: ['Ranged', 'Silent'], image: '/art/crossbow.jpg',
     art: `<path d="M12 22 Q32 4 52 22"/><path d="M12 22 L52 22"/><path d="M32 8 L32 52"/><path d="M27 48 L32 42 L37 48"/><path d="M27 52 L37 52"/>` },
   { id: 'revolver', rarity: 'rare', name: 'The Revolver', line: 'Six answers. Choose the questions.', traits: ['Ranged'], image: '/art/revolver.jpg',
     art: `<path d="M10 22 H54 V28 H36"/><circle cx="28" cy="28" r="6"/><path d="M23 32 L15 48 L23 51 L29 36"/><path d="M31 34 q1 6 8 6"/><path d="M10 22 V27"/>` },
@@ -88,6 +93,7 @@ export const KEEPSAKES = [
 // PRY OPEN" whisper and an event's "REQUIRES Pry Open" lock visibly agree.
 export const TRAIT_LABELS = {
   Ranged: 'RANGED',
+  Silent: 'SILENT',
   PryOpen: 'PRY OPEN',
   Heal: 'TREAT WOUNDS',
   Cure: 'CURE INFECTION',
@@ -108,7 +114,13 @@ export const TRAIT_LABELS = {
 // alone at, the emptied pockets on a table.
 export const SURVIVOR_SLOTS = [
   {
-    key: 'weapon', numeral: 'I', title: 'THE WEAPON', prompt: 'What you carry in your hands.', items: WEAPONS,
+    // `artRatio` is each page's display window. Weapons/keepsakes match
+    // their plates' native dimensions (800x447) so nothing gets cropped.
+    // Companions are the opposite: a tall 4:5 portrait window that crops
+    // the wide 800x348 plates' parchment sides away so the character sits
+    // front and center — paired with `layout: 'row'` (one row of four)
+    // since tall cards don't fit two rows deep.
+    key: 'weapon', numeral: 'I', title: 'THE WEAPON', prompt: 'What you carry in your hands.', items: WEAPONS, artRatio: '800 / 447',
     // The gear wall: a plank with pegs, a rifle hung at a tilt, a hatchet
     // and a coil of rope waiting beside it.
     banner: `
@@ -120,7 +132,14 @@ export const SURVIVOR_SLOTS = [
     `,
   },
   {
-    key: 'companion', numeral: 'II', title: 'THE COMPANION', prompt: 'Who walks beside you.', items: COMPANIONS,
+    // Companions display in a 6:5 portrait window (character centered,
+    // head-to-belt framing) inside the same 2x2 grid as the other pages —
+    // the card's text block is kept compact so the portrait gets the
+    // vertical room instead. NOTE: the committed plates are 800x348
+    // strips, so until they're replaced with taller ~6:5 exports (e.g.
+    // 800x667) the window can only show the strip's full height, zoomed
+    // out as far as the source allows.
+    key: 'companion', numeral: 'II', title: 'THE COMPANION', prompt: 'Who walks beside you.', items: COMPANIONS, artRatio: '6 / 5',
     // The fire you're not alone at: two figures seated either side of a
     // small campfire, a dog curled close, smoke drifting.
     banner: `
@@ -134,7 +153,7 @@ export const SURVIVOR_SLOTS = [
     `,
   },
   {
-    key: 'keepsake', numeral: 'III', title: 'THE KEEPSAKE', prompt: 'What you refuse to leave behind.', items: KEEPSAKES,
+    key: 'keepsake', numeral: 'III', title: 'THE KEEPSAKE', prompt: 'What you refuse to leave behind.', items: KEEPSAKES, artRatio: '16 / 9',
     // Emptied pockets on a table before leaving: a photograph, a ring, a
     // pocket watch on its chain, a folded map.
     banner: `

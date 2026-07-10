@@ -93,6 +93,8 @@ export const EVENTS = [
     choices:[
       { text:'Drop them from a distance', requiredTrait:'Ranged', reqLabel:'Ranged',
         result:{days:3,msg:'Six shots, six down. The rest scatter. You walk through the quiet you bought.',tag:'−6 ROUNDS'} },
+      { text:'Take them one by one, without a sound', requiredTrait:'Silent', reqLabel:'Silent',
+        result:{days:3,health:1,msg:'Bolt by bolt, the column goes still. Nothing hears. Nothing comes. You collect your arrows and walk on.',tag:'NOT A SOUND'} },
       { text:'Blast a corridor straight up the middle', requiredWeapon:'shotgun',
         result:{days:2,health:-1,msg:'Two shells clear the lane. The noise will travel, but so will you.',tag:'LOUD EXIT'} },
       { text:'Hold the choke point and thin them out', requiredWeapon:'spear',
@@ -190,6 +192,8 @@ export const EVENTS = [
     choices:[
       { text:'Drop the lead dog from range', requiredTrait:'Ranged', reqLabel:'Ranged',
         result:{days:2,msg:"One shot. The pack scatters at the sound and doesn't come back.",tag:'PACK BROKEN'} },
+      { text:'Put the leader down before the pack commits', requiredTrait:'Silent', reqLabel:'Silent',
+        result:{days:2,health:1,msg:'The bolt takes the leader mid-stride, and the pack loses its nerve before it finds its voice. The woods never learn you were there.',tag:'NEVER SEEN'} },
       { text:'Let the hunter turn the chase around', requiredCompanion:'hunter',
         result:{days:2,health:1,msg:"By dusk the pack is down two and you're carrying dinner. Hunted, hunter — the word order matters.",tag:'TABLES TURNED'} },
       { text:'Kneel, hold out the old collar, and speak low', requiredKeepsake:'dog_collar',
