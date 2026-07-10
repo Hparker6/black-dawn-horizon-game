@@ -270,6 +270,23 @@ body {
   }
 }
 
+/* Jackpot ember: a glowing mote drifting up a settled jackpot card,
+   looping. Horizontal drift comes in per-mote via --ex (see the Embers
+   component in screens/Draft.jsx). Not rendered under reduced motion. */
+@keyframes bdhEmberRise {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(var(--ex, 0px), -130px) scale(0.35);
+    opacity: 0;
+  }
+}
+
 /* One confetti piece flung outward from a jackpot card the instant it
    settles. Direction/distance/rotation come in per-piece via custom
    properties set inline (see components/JackpotConfetti.jsx). */
@@ -413,20 +430,35 @@ body {
   transform: scale(1.01);
 }
 
-/* Survivor identity draft cards (screens/Draft.jsx): each taped-in sketch
-   sits at its own slight tilt (inline transform), so hover must not stomp
-   that — the class only adds lift via filter/shadow, never transform.
-   Disabled (after a pick) cards lose hover via :not(:disabled), same
-   pattern as the route cards above. */
+/* Draft card grid (screens/Draft.jsx): the 2x2 slot-machine layout, shared
+   by all three identity pages. */
+.bdh-draft-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: clamp(10px, 1.8vw, 14px);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* Survivor identity draft cards (screens/Draft.jsx): hover lift signals
+   "this one is pickable." box-shadow needs !important because the idle
+   rarityGlow* animations also animate box-shadow and would otherwise win.
+   The transform is safe: the settle animations' scale finishes before a
+   card is hoverable, and disabled (mid-roll or after a pick) cards lose
+   hover entirely via :not(:disabled). */
 .bdh-id-card {
   -webkit-tap-highlight-color: transparent;
 }
 .bdh-id-card:hover:not(:disabled) {
   filter: brightness(1.04);
-  box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.45) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.45) !important;
 }
 .bdh-id-card:active:not(:disabled) {
   filter: brightness(0.99);
+  transform: translateY(-1px);
 }
 
 /* Field-note margin scrap (App.jsx's event screen): only shown once the

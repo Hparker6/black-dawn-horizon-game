@@ -21,42 +21,51 @@
 // wrapper in Draft.jsx) — hand-drawn field-journal sketches, not emoji, so
 // the draft pages read as pages from the same notebook as everything else.
 // All strings are static/local; nothing user-supplied ever lands in them.
+//
+// `image` (optional) is an illustrated plate in public/art/ — ink-on-parchment
+// artwork rendered in place of the SVG sketch when present. The SVG stays as
+// the fallback if the image fails to load, so a card is never blank.
 
 export const WEAPONS = [
-  { id: 'crossbow', rarity: 'jackpot', name: 'The Crossbow', line: 'Quiet leaves no witnesses.', traits: ['Ranged'],
+  // The three ranged weapons deliberately don't collapse into one trait:
+  // the revolver and rifle are Ranged and loud; the crossbow is Ranged AND
+  // Silent — the stealth pull. Silent gates its own event choices (quiet
+  // kills that never draw the horde), so the jackpot pull plays differently,
+  // not just looks different.
+  { id: 'crossbow', rarity: 'jackpot', name: 'The Crossbow', line: 'Quiet leaves no witnesses.', traits: ['Ranged', 'Silent'], image: '/art/crossbow.jpg',
     art: `<path d="M12 22 Q32 4 52 22"/><path d="M12 22 L52 22"/><path d="M32 8 L32 52"/><path d="M27 48 L32 42 L37 48"/><path d="M27 52 L37 52"/>` },
-  { id: 'revolver', rarity: 'rare', name: 'The Revolver', line: 'Six answers. Choose the questions.', traits: ['Ranged'],
+  { id: 'revolver', rarity: 'rare', name: 'The Revolver', line: 'Six answers. Choose the questions.', traits: ['Ranged'], image: '/art/revolver.jpg',
     art: `<path d="M10 22 H54 V28 H36"/><circle cx="28" cy="28" r="6"/><path d="M23 32 L15 48 L23 51 L29 36"/><path d="M31 34 q1 6 8 6"/><path d="M10 22 V27"/>` },
-  { id: 'crowbar', rarity: 'common', name: 'The Crowbar', line: 'Every door becomes a suggestion.', traits: ['PryOpen'],
+  { id: 'crowbar', rarity: 'common', name: 'The Crowbar', line: 'Every door becomes a suggestion.', traits: ['PryOpen'], image: '/art/crowbar.jpg',
     art: `<path d="M22 54 L46 18 C51 10 42 5 38 12 L36 16"/><path d="M17 49 L27 58"/>` },
-  { id: 'hatchet', rarity: 'common', name: 'The Hatchet', line: "Fences, firewood, whatever's next.", traits: ['Fire'],
+  { id: 'hatchet', rarity: 'common', name: 'The Hatchet', line: "Fences, firewood, whatever's next.", traits: ['Fire'], image: '/art/hatchet.jpg',
     art: `<path d="M40 14 L20 56"/><path d="M35 7 L52 15 C50 26 41 29 33 24 Z"/>` },
-  { id: 'rifle', rarity: 'ultra', name: 'The Hunting Rifle', line: 'One shot, from a long way off.', traits: ['Ranged'],
+  { id: 'rifle', rarity: 'ultra', name: 'The Hunting Rifle', line: 'One shot, from a long way off.', traits: ['Ranged'], image: '/art/rifle.jpg',
     art: `<path d="M6 34 L40 30"/><path d="M40 28 L56 32 L52 44 L44 38 L41 34"/><path d="M20 33 L22 41"/><rect x="25" y="21" width="12" height="5" rx="2"/><path d="M31 26 L31 30"/>` },
-  { id: 'shotgun', rarity: 'common', name: 'The Shotgun', line: 'The sound alone ends arguments.', traits: [],
+  { id: 'shotgun', rarity: 'common', name: 'The Shotgun', line: 'The sound alone ends arguments.', traits: [], image: '/art/shotgun.jpg',
     art: `<path d="M6 30 H38"/><path d="M6 34 H38"/><path d="M16 34 L14 41 H26 L26 34"/><path d="M38 28 L56 34 L52 45 L40 36 Z"/>` },
-  { id: 'spear', rarity: 'common', name: 'The Spear', line: 'Reach, silence, and steady hands.', traits: [],
+  { id: 'spear', rarity: 'common', name: 'The Spear', line: 'Reach, silence, and steady hands.', traits: [], image: '/art/spear.jpg',
     art: `<path d="M14 58 L44 18"/><path d="M44 18 L42 6 L54 12 Z"/><path d="M37 25 L43 30"/><path d="M34 29 L40 34"/>` },
-  { id: 'machete', rarity: 'common', name: 'The Machete', line: 'Never jams. Never empty.', traits: [],
+  { id: 'machete', rarity: 'common', name: 'The Machete', line: 'Never jams. Never empty.', traits: [], image: '/art/machete.jpg',
     art: `<path d="M15 44 C28 46 42 38 52 22 L44 14 C36 28 26 35 17 35 Z"/><path d="M9 53 L16 43"/>` },
 ];
 
 export const COMPANIONS = [
-  { id: 'mechanic', rarity: 'common', name: 'The Mechanic', line: "If it's broken, she's interested.", traits: ['Signal', 'Purify'],
+  { id: 'mechanic', rarity: 'common', name: 'The Mechanic', line: "If it's broken, she's interested.", traits: ['Signal', 'Purify'], image: '/art/mechanic.jpg',
     art: `<circle cx="24" cy="22" r="8"/><circle cx="24" cy="22" r="2.5"/><path d="M24 11 V6 M24 33 V38 M13 22 H8 M35 22 H40 M16 14 L13 11 M32 30 L35 33 M32 14 L35 11 M16 30 L13 33"/><path d="M38 36 L52 50 M45 43 l7 -7"/>` },
-  { id: 'nurse', rarity: 'rare', name: 'The Nurse', line: 'Every life still counts. Yours too.', traits: ['Heal', 'Cure'],
+  { id: 'nurse', rarity: 'rare', name: 'The Nurse', line: 'Every life still counts. Yours too.', traits: ['Heal', 'Cure'], image: '/art/nurse.jpg',
     art: `<circle cx="32" cy="32" r="18"/><path d="M32 21 V43 M21 32 H43"/>` },
-  { id: 'hunter', rarity: 'common', name: 'The Hunter', line: 'Reads the ground like a headline.', traits: ['Scout'],
+  { id: 'hunter', rarity: 'common', name: 'The Hunter', line: 'Reads the ground like a headline.', traits: ['Scout'], image: '/art/hunter.jpg',
     art: `<path d="M32 56 V32"/><path d="M32 36 C24 34 20 27 20 15 M25 27 L18 25 M23 21 L16 21"/><path d="M32 36 C40 34 44 27 44 15 M39 27 L46 25 M41 21 L48 21"/>` },
-  { id: 'officer', rarity: 'common', name: 'The Retired Officer', line: 'Twenty years of talking people down.', traits: ['Navigate'],
+  { id: 'officer', rarity: 'common', name: 'The Retired Officer', line: 'Twenty years of talking people down.', traits: ['Navigate'], image: '/art/officer.jpg',
     art: `<path d="M32 8 L50 14 V30 C50 44 42 52 32 56 C22 52 14 44 14 30 V14 Z"/><path d="M32 22 l5 10 h-10 Z"/><path d="M24 42 H40"/>` },
-  { id: 'seal', rarity: 'ultra', name: 'The Navy SEAL', line: 'The beach is just another Tuesday.', traits: [],
+  { id: 'seal', rarity: 'ultra', name: 'The Navy SEAL', line: 'The beach is just another Tuesday.', traits: [], image: '/art/seal.jpg',
     art: `<path d="M32 10 V56"/><path d="M20 14 V24 C20 32 26 34 32 34 C38 34 44 32 44 24 V14"/><path d="M20 14 l-3 5 M44 14 l3 5 M32 10 l-4 5 M32 10 l4 5"/>` },
-  { id: 'dog', rarity: 'jackpot', name: 'The Dog', line: 'Hears trouble before it exists.', traits: [],
+  { id: 'dog', rarity: 'jackpot', name: 'The Dog', line: 'Hears trouble before it exists.', traits: [], image: '/art/dog.jpg',
     art: `<circle cx="20" cy="20" r="4.5"/><circle cx="32" cy="16" r="4.5"/><circle cx="44" cy="20" r="4.5"/><path d="M21 44 C21 36 26 31 32 31 C38 31 43 36 43 44 C43 52 21 52 21 44 Z"/>` },
-  { id: 'teenager', rarity: 'common', name: 'The Teenager', line: 'Fearless, fast, and up anything vertical.', traits: [],
+  { id: 'teenager', rarity: 'common', name: 'The Teenager', line: 'Fearless, fast, and up anything vertical.', traits: [], image: '/art/teenager.jpg',
     art: `<path d="M10 34 C12 41 16 43 21 43 H43 C48 43 52 41 54 34"/><circle cx="24" cy="50" r="4"/><circle cx="41" cy="50" r="4"/><path d="M17 43 V47 M47 43 V47"/>` },
-  { id: 'journalist', rarity: 'common', name: 'The Journalist', line: 'Words still open doors.', traits: [],
+  { id: 'journalist', rarity: 'common', name: 'The Journalist', line: 'Words still open doors.', traits: [], image: '/art/journalist.jpg',
     art: `<rect x="10" y="22" width="44" height="28" rx="3"/><circle cx="32" cy="36" r="9"/><circle cx="32" cy="36" r="4"/><path d="M22 22 L26 14 H38 L42 22"/><path d="M47 28 l1.5 0"/>` },
 ];
 
@@ -84,6 +93,7 @@ export const KEEPSAKES = [
 // PRY OPEN" whisper and an event's "REQUIRES Pry Open" lock visibly agree.
 export const TRAIT_LABELS = {
   Ranged: 'RANGED',
+  Silent: 'SILENT',
   PryOpen: 'PRY OPEN',
   Heal: 'TREAT WOUNDS',
   Cure: 'CURE INFECTION',
@@ -104,7 +114,13 @@ export const TRAIT_LABELS = {
 // alone at, the emptied pockets on a table.
 export const SURVIVOR_SLOTS = [
   {
-    key: 'weapon', numeral: 'I', title: 'THE WEAPON', prompt: 'What you carry in your hands.', items: WEAPONS,
+    // `artRatio` is each page's display window. Weapons/keepsakes match
+    // their plates' native dimensions (800x447) so nothing gets cropped.
+    // Companions are the opposite: a tall 4:5 portrait window that crops
+    // the wide 800x348 plates' parchment sides away so the character sits
+    // front and center — paired with `layout: 'row'` (one row of four)
+    // since tall cards don't fit two rows deep.
+    key: 'weapon', numeral: 'I', title: 'THE WEAPON', prompt: 'What you carry in your hands.', items: WEAPONS, artRatio: '800 / 447',
     // The gear wall: a plank with pegs, a rifle hung at a tilt, a hatchet
     // and a coil of rope waiting beside it.
     banner: `
@@ -116,7 +132,14 @@ export const SURVIVOR_SLOTS = [
     `,
   },
   {
-    key: 'companion', numeral: 'II', title: 'THE COMPANION', prompt: 'Who walks beside you.', items: COMPANIONS,
+    // Companions display in a 6:5 portrait window (character centered,
+    // head-to-belt framing) inside the same 2x2 grid as the other pages —
+    // the card's text block is kept compact so the portrait gets the
+    // vertical room instead. NOTE: the committed plates are 800x348
+    // strips, so until they're replaced with taller ~6:5 exports (e.g.
+    // 800x667) the window can only show the strip's full height, zoomed
+    // out as far as the source allows.
+    key: 'companion', numeral: 'II', title: 'THE COMPANION', prompt: 'Who walks beside you.', items: COMPANIONS, artRatio: '6 / 5',
     // The fire you're not alone at: two figures seated either side of a
     // small campfire, a dog curled close, smoke drifting.
     banner: `
@@ -130,7 +153,7 @@ export const SURVIVOR_SLOTS = [
     `,
   },
   {
-    key: 'keepsake', numeral: 'III', title: 'THE KEEPSAKE', prompt: 'What you refuse to leave behind.', items: KEEPSAKES,
+    key: 'keepsake', numeral: 'III', title: 'THE KEEPSAKE', prompt: 'What you refuse to leave behind.', items: KEEPSAKES, artRatio: '16 / 9',
     // Emptied pockets on a table before leaving: a photograph, a ring, a
     // pocket watch on its chain, a folded map.
     banner: `

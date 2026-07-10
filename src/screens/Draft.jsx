@@ -15,10 +15,29 @@ import JackpotConfetti from "../components/JackpotConfetti.jsx";
 // Round-to-round transition is the same quiet fade-up the lore pages use —
 // no page-flip.
 
-// Shared by the real cards and the idle-phase ghost placeholders so the
-// ROLL button's preview matches the size of what's about to land.
-const GRID_CARD_MIN_HEIGHT = "236px";
-const GRID_MAX_WIDTH = "680px";
+// Card geometry, shared by the real cards, the idle-phase ghost
+// placeholders, and the cycling (mid-roll) faces so nothing jumps when a
+// slot settles. Card min-height derives from the slot's own art window:
+// art height (vh-capped so two rows + header + reroll still fit a short
+// laptop screen) plus the text block. The text block is deliberately
+// tight — the art gets the vertical room, the text doesn't.
+const CARD_TEXT_BLOCK = "112px";
+const CARD_WIDTH = "min(354px, 50vw - 18px)";
+const ART_MAX_HEIGHT = "20vh";
+const GRID_MAX_WIDTH = "720px";
+function cardMinHeight(artRatioNum) {
+  return `calc(min(${CARD_WIDTH} / ${artRatioNum.toFixed(3)}, ${ART_MAX_HEIGHT}) + ${CARD_TEXT_BLOCK})`;
+}
+// The illustrated plate: full-bleed to the card edges and the dominant
+// element of the card. The aspect window comes from the slot's `artRatio`
+// (native for weapon plates, a tall portrait crop for companions), the
+// height cap from the slot's layout.
+const ART_STYLE = {
+  width: "100%",
+  minHeight: "92px",
+  objectFit: "cover",
+  display: "block",
+};
 
 // Shuffle timing: fast cycling through the pool, then each of the 4 slots
 // stops one at a time (staggered) so the deceleration reads as a
@@ -43,35 +62,119 @@ function randomCard(pool) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-function gridStyle() {
-  return { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", maxWidth: GRID_MAX_WIDTH, width: "100%", margin: "0 auto" };
-}
-
-// Rarity is a visual axis only — border/background color and glow intensity
-// scale with tier, nothing else does.
-function cardStyle(picked, pending, rarity) {
+// Rarity is a visual axis only, but the ladder should be readable at a
+// glance the way collectible card games do it: commons sit on duller,
+// grayer paper with muted art; rare adds gold foil corners on brighter
+// parchment; ultra gets a purple double frame and a wax seal; jackpot gets
+// its own heavy gold frame, seal, spotlight, and rising embers. None of it
+// changes what a card does.
+function cardStyle(picked, pending, rarity, minHeight) {
   const rc = t.rarityColors(rarity);
+  const common = rarity === "common";
+  const heavyFrame = rarity === "ultra" || rarity === "jackpot";
   return {
     position: "relative",
     textAlign: "center",
     cursor: picked ? "default" : "pointer",
     borderRadius: "3px",
-    padding: "12px 12px 10px",
+    padding: 0,
     fontFamily: t.fontBody,
-    border: "1px solid " + (picked ? t.blood : rc.border),
-    background: picked ? t.pickedBg : rc.bg,
+    border: `${heavyFrame ? "2px" : "1px"} solid ` + (picked ? t.blood : rc.border),
+    background: picked ? t.pickedBg : common ? t.commonBg : t.rareBg,
     boxShadow: picked ? "0 0 0 2px #c62828 inset" : "0 2px 6px -3px rgba(0,0,0,.25)",
-    transition: "transform .15s, box-shadow .15s",
+    transition: "transform .15s, box-shadow .15s, filter .15s",
     opacity: pending && !picked ? 0.35 : 1,
     overflow: "hidden",
-    minHeight: GRID_CARD_MIN_HEIGHT,
+    minHeight,
+  };
+}
+
+// Rare's "gold foil" photo-mount corners. A separate element (not
+// box-shadow) because the rarityGlow* animations own the card's
+// box-shadow.
+function FoilCorners() {
+  const base = { position: "absolute", width: "13px", height: "13px", zIndex: 2, pointerEvents: "none" };
+  const b = `2px solid ${t.rareBorder}`;
+  return (
+    <>
+      <span style={{ ...base, top: "4px", left: "4px", borderTop: b, borderLeft: b }} />
+      <span style={{ ...base, top: "4px", right: "4px", borderTop: b, borderRight: b }} />
+      <span style={{ ...base, bottom: "4px", left: "4px", borderBottom: b, borderLeft: b }} />
+      <span style={{ ...base, bottom: "4px", right: "4px", borderBottom: b, borderRight: b }} />
+    </>
+  );
+}
+
+// Ultra/jackpot inner rule — reads as a decorative double frame with the
+// outer border. Also an element rather than box-shadow, same reason as
+// FoilCorners.
+function InnerFrame({ rarity }) {
+  return (
+    <span
+      style={{
+        position: "absolute",
+        inset: "3px",
+        border: `1px solid ${t.rarityColors(rarity).border}`,
+        borderRadius: "2px",
+        opacity: 0.65,
+        zIndex: 2,
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
+// Jackpot's rising embers: a handful of glowing motes drifting up the card,
+// looping. Skipped entirely under reduced motion.
+const EMBER_COLORS = ["#e8b64e", "#d4763b", "#e8b64e", "#c62828", "#e8b64e", "#d4763b"];
+function Embers() {
+  return (
+    <span style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 2 }} aria-hidden="true">
+      {EMBER_COLORS.map((color, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            bottom: "6px",
+            left: `${8 + i * 15}%`,
+            width: i % 2 ? "3px" : "4px",
+            height: i % 2 ? "3px" : "4px",
+            borderRadius: "50%",
+            background: color,
+            boxShadow: `0 0 6px 1px ${color}`,
+            opacity: 0,
+            "--ex": `${(i % 3) * 8 - 8}px`,
+            animation: `bdhEmberRise ${2.2 + (i % 3) * 0.4}s ease-out ${i * 0.45}s infinite`,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+// Small tier tag overlaid on the artwork's top-left corner — replaces the
+// old 9px label that sat in the card body and was nearly invisible.
+function rarityTagStyle(rarity) {
+  const rc = t.rarityColors(rarity);
+  return {
+    position: "absolute",
+    top: "7px",
+    left: "7px",
+    zIndex: 1,
+    fontSize: "9px",
+    letterSpacing: "1.5px",
+    padding: "3px 7px 2px",
+    borderRadius: "2px",
+    border: `1px solid ${rc.border}`,
+    color: rc.text,
+    background: "rgba(250,246,236,.88)",
   };
 }
 
 function rarityBadge(rarity) {
   if (rarity === "common") return null; // common uses the dog-ear fold instead of a badge
   const rc = t.rarityColors(rarity);
-  const style = {
+  const base = {
     position: "absolute",
     top: "8px",
     right: "8px",
@@ -82,46 +185,111 @@ function rarityBadge(rarity) {
     alignItems: "center",
     justifyContent: "center",
     fontSize: "11px",
-    zIndex: 1,
-    border: `1.5px solid ${rc.border}`,
-    color: rc.text,
-    background: rc.bg,
+    zIndex: 3,
   };
-  const icon = rarity === "jackpot" ? "★" : rarity === "ultra" ? "◆" : "✦";
-  return { style, icon };
+  // Ultra and jackpot wear a wax seal pressed onto the plate; rare keeps
+  // the quieter paper button.
+  if (rarity === "ultra" || rarity === "jackpot") {
+    const gold = rarity === "jackpot";
+    return {
+      style: {
+        ...base,
+        width: "26px",
+        height: "26px",
+        transform: gold ? "rotate(7deg)" : "rotate(-8deg)",
+        background: gold
+          ? "radial-gradient(circle at 35% 30%, #eecb6e, #b8892a 75%)"
+          : "radial-gradient(circle at 35% 30%, #b98fe8, #6a3fb0 75%)",
+        color: gold ? "#4a3608" : "#f3ecfc",
+        border: `1px solid ${gold ? "#8a6a12" : "#5a3596"}`,
+        boxShadow: "0 1px 3px rgba(0,0,0,.35)",
+      },
+      icon: gold ? "★" : "◆",
+    };
+  }
+  return {
+    style: { ...base, border: `1.5px solid ${rc.border}`, color: rc.text, background: "rgba(250,246,236,.92)" },
+    icon: "✦",
+  };
 }
 
 // Idle-phase filler: four dashed placeholder slots the same size/shape as
 // the cards about to land. Purely decorative.
-function GhostSlots() {
+function GhostSlots({ minHeight }) {
   return (
-    <div style={gridStyle()}>
+    <div className="bdh-draft-grid">
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} style={{ minHeight: GRID_CARD_MIN_HEIGHT, borderRadius: "3px", border: `1px dashed ${t.borderDashed}`, opacity: 0.5 }} />
+        <div key={i} style={{ minHeight, borderRadius: "3px", border: `1px dashed ${t.borderDashed}`, opacity: 0.5 }} />
       ))}
     </div>
   );
 }
 
-function SketchArt({ art }) {
+function SketchArt({ art, image, rarity, ratio, maxHeight }) {
+  // Illustrated plates (data/survivor.js `image`) render in place of the SVG
+  // sketch; the sketch stays as the fallback if the file is missing or fails
+  // to load, so a settled card is never blank. Common art is slightly
+  // desaturated so the higher tiers' full-color plates read richer; jackpot
+  // gets a warm spotlight overlay.
+  const [broken, setBroken] = useState(false);
+  const spotlight = rarity === "jackpot" && (
+    <span
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        background: "radial-gradient(ellipse at 50% 42%, rgba(255,214,110,.28), transparent 62%)",
+      }}
+    />
+  );
+  if (image && !broken) {
+    return (
+      <div style={{ position: "relative" }}>
+        <img
+          src={image}
+          alt=""
+          aria-hidden="true"
+          onError={() => setBroken(true)}
+          style={{
+            ...ART_STYLE,
+            aspectRatio: ratio,
+            maxHeight,
+            borderBottom: "1px solid rgba(42,38,32,.28)",
+            filter: rarity === "common" ? "saturate(.72)" : "none",
+          }}
+        />
+        {spotlight}
+      </div>
+    );
+  }
   return (
-    <svg viewBox="0 0 64 64" style={{ width: "100%", height: "82px", display: "block", margin: "2px 0 0" }} aria-hidden="true">
-      <g
-        fill="none"
-        stroke="#2a2620"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        // Static, local sketch markup from data/survivor.js — never
-        // user-supplied.
-        dangerouslySetInnerHTML={{ __html: art }}
-      />
-    </svg>
+    <div style={{ position: "relative" }}>
+      <div style={{ ...ART_STYLE, aspectRatio: ratio, maxHeight, background: t.commonBg, borderBottom: "1px solid rgba(42,38,32,.28)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg viewBox="0 0 64 64" style={{ height: "72%", display: "block" }} aria-hidden="true">
+          <g
+            fill="none"
+            stroke="#2a2620"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            // Static, local sketch markup from data/survivor.js — never
+            // user-supplied.
+            dangerouslySetInnerHTML={{ __html: art }}
+          />
+        </svg>
+      </div>
+      {spotlight}
+    </div>
   );
 }
 
 export default function Draft({ round, respins, phase, cards, pickedId, reduceMotion, onRoll, onReroll, onPickCard }) {
   const slot = SURVIVOR_SLOTS[round];
+  // Numeric form of the slot's art ratio (e.g. "6 / 5" → 1.2), for
+  // computing how tall this page's cards actually run.
+  const [arW, arH] = (slot.artRatio || "16 / 9").split("/").map(parseFloat);
+  const minHeight = cardMinHeight(arW / arH);
   const idle = phase === "idle";
   const active = phase === "rolling" || phase === "revealed";
   const revealed = phase === "revealed";
@@ -130,6 +298,17 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
   const [faces, setFaces] = useState([null, null, null, null]);
   const [settled, setSettled] = useState([false, false, false, false]);
   const [celebrate, setCelebrate] = useState([false, false, false, false]);
+
+  // Warm the browser cache for every illustrated plate the moment the draft
+  // opens, so a card never settles before its artwork has arrived — the
+  // slot-machine landing is the showcase moment and must not pop in.
+  useEffect(() => {
+    SURVIVOR_SLOTS.forEach((s) =>
+      s.items.forEach((item) => {
+        if (item.image) new Image().src = item.image;
+      })
+    );
+  }, []);
 
   useEffect(() => {
     if (phase !== "rolling") return;
@@ -200,7 +379,7 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        padding: "20px 18px 20px",
+        padding: "20px clamp(10px, 2.5vw, 18px) 20px",
         animation: "bdhFadeUp .4s ease both",
         backgroundImage: t.gameplayRuleBg,
         backgroundSize: t.journalRuleSize,
@@ -223,20 +402,16 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
         </div>
       </div>
 
-      <div style={{ textAlign: "center", margin: "8px 0 14px" }}>
-        {/* Each category's own header vignette (data/survivor.js `banner`). */}
-        <svg viewBox="0 0 320 64" style={{ width: "min(340px, 80%)", display: "block", margin: "0 auto 4px", opacity: 0.82 }} aria-hidden="true">
-          <g fill="none" stroke="#2a2620" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: slot.banner }} />
-        </svg>
-        <div style={{ fontFamily: t.fontDisplay, fontSize: "34px", lineHeight: 1, letterSpacing: "1px", color: t.ink }}>{slot.title}</div>
-        <div style={{ fontFamily: t.fontHand, fontWeight: 500, fontSize: "18px", color: t.muted, marginTop: "4px" }}>
+      <div style={{ textAlign: "center", margin: "8px 0 12px" }}>
+        <div style={{ fontFamily: t.fontDisplay, fontSize: "clamp(26px, 4.5vw, 34px)", lineHeight: 1, letterSpacing: "1px", color: t.ink }}>{slot.title}</div>
+        <div style={{ fontFamily: t.fontHand, fontWeight: 500, fontSize: "clamp(15px, 2.2vw, 18px)", color: t.muted, marginTop: "4px" }}>
           {slot.prompt} Roll for what fate hands over.
         </div>
       </div>
 
       {idle && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "22px", minHeight: 0 }}>
-          <GhostSlots />
+          <GhostSlots minHeight={minHeight} />
           <button
             onClick={onRoll}
             style={{
@@ -262,7 +437,7 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
 
       {active && (
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "16px", flex: 1, minHeight: 0 }}>
-          <div data-noscroll="true" style={gridStyle()}>
+          <div data-noscroll="true" className="bdh-draft-grid">
             {[0, 1, 2, 3].map((i) => {
               // While rolling and not yet settled, show the cycling face from
               // the pool (name only — full detail would just blur past at
@@ -276,7 +451,7 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
               const badge = isSettled ? rarityBadge(rarity) : null;
               const showDogEar = isSettled && rarity === "common";
               const showShimmer = isSettled && (rarity === "ultra" || rarity === "jackpot");
-              const traitLine = (displayCard.traits || []).map((tr) => "✦ " + (TRAIT_LABELS[tr] || tr)).join("   ");
+              const traits = displayCard.traits || [];
 
               return (
                 <button
@@ -284,9 +459,11 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
                   // animation reliably (re)plays, without disturbing the
                   // other 3 still-cycling slots.
                   key={`${i}-${isSettled}`}
+                  className="bdh-id-card"
+                  disabled={!revealed || !!pickedId}
                   onClick={() => revealed && onPickCard(displayCard)}
                   style={{
-                    ...cardStyle(picked, revealed && !!pickedId, rarity),
+                    ...cardStyle(picked, revealed && !!pickedId, rarity, minHeight),
                     cursor: revealed && !pickedId ? "pointer" : "default",
                     animation: isSettled ? SETTLE_ANIM[rarity] : "bdhFlick .5s ease-in-out infinite",
                   }}
@@ -306,6 +483,9 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
                     </span>
                   )}
                   {badge && <span style={badge.style}>{badge.icon}</span>}
+                  {isSettled && rarity === "rare" && <FoilCorners />}
+                  {isSettled && (rarity === "ultra" || rarity === "jackpot") && <InnerFrame rarity={rarity} />}
+                  {isSettled && rarity === "jackpot" && !reduceMotion && <Embers />}
                   {showDogEar && (
                     <span
                       style={{
@@ -322,22 +502,67 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
                   )}
                   {isSettled ? (
                     <div style={{ position: "relative", zIndex: 0, display: "flex", flexDirection: "column", height: "100%" }}>
-                      <div style={{ fontSize: "9px", letterSpacing: "1.5px", color: t.rarityColors(rarity).text, textAlign: "left" }}>
-                        {t.RARITY_LABEL[rarity]}
-                      </div>
-                      <SketchArt art={displayCard.art} />
-                      <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "1.2px", color: t.ink, marginTop: "8px" }}>
-                        {displayCard.name.toUpperCase()}
-                      </div>
-                      <div style={{ fontFamily: t.fontHand, fontWeight: 500, fontSize: "15px", lineHeight: 1.25, color: t.muted, marginTop: "4px" }}>
-                        {displayCard.line}
-                      </div>
-                      <div style={{ fontSize: "9px", letterSpacing: "1.5px", color: t.goldDark, marginTop: "auto", paddingTop: "7px", minHeight: "12px" }}>
-                        {traitLine}
+                      <SketchArt art={displayCard.art} image={displayCard.image} rarity={rarity} ratio={slot.artRatio} maxHeight={ART_MAX_HEIGHT} />
+                      <span style={rarityTagStyle(rarity)}>{t.RARITY_LABEL[rarity]}</span>
+                      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "6px 10px 7px" }}>
+                        <div style={{ fontSize: "clamp(12px, 1.6vw, 14px)", fontWeight: 700, letterSpacing: "1.2px", color: t.ink }}>
+                          {displayCard.name.toUpperCase()}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: t.fontHand,
+                            fontWeight: 500,
+                            fontSize: "clamp(13px, 1.8vw, 15px)",
+                            lineHeight: 1.2,
+                            color: t.muted,
+                            marginTop: "2px",
+                          }}
+                        >
+                          {displayCard.line}
+                        </div>
+                        {/* Skill footer: what this piece actually does. Traits
+                            unlock matching event choices (same labels the
+                            events' REQUIRES locks use), so they render as
+                            explicit "UNLOCKS" chips; trait-less pieces say so
+                            outright rather than showing nothing. */}
+                        <div style={{ marginTop: "auto", paddingTop: "5px" }}>
+                          <div style={{ borderTop: `1px dashed ${t.borderSubtle}`, paddingTop: "4px" }}>
+                            {traits.length > 0 ? (
+                              <>
+                                <div style={{ fontSize: "8px", letterSpacing: "2px", color: t.muted, marginBottom: "3px" }}>UNLOCKS</div>
+                                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "4px" }}>
+                                  {traits.map((tr) => (
+                                    <span
+                                      key={tr}
+                                      title={`Unlocks "${TRAIT_LABELS[tr] || tr}" choices during events`}
+                                      style={{
+                                        fontSize: "10px",
+                                        fontWeight: 700,
+                                        letterSpacing: "1.5px",
+                                        padding: "3px 8px 2px",
+                                        borderRadius: "2px",
+                                        border: `1px solid ${t.goldDark}`,
+                                        background: t.highlightBg,
+                                        color: t.highlightText,
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      ✦ {TRAIT_LABELS[tr] || tr}
+                                    </span>
+                                  ))}
+                                </div>
+                              </>
+                            ) : (
+                              <div style={{ fontSize: "9px", letterSpacing: "1.5px", color: t.rankMuted, paddingTop: "2px" }}>
+                                — NO SPECIAL SKILL —
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div style={{ position: "relative", zIndex: 0, display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                    <div style={{ position: "relative", zIndex: 0, display: "flex", alignItems: "center", justifyContent: "center", height: "100%", padding: "12px" }}>
                       <div style={{ fontSize: "14px", color: t.rankMuted, letterSpacing: ".3px", textAlign: "center" }}>{displayCard.name}</div>
                     </div>
                   )}
@@ -369,25 +594,30 @@ export default function Draft({ round, respins, phase, cards, pickedId, reduceMo
             })}
           </div>
           {canReroll && (
+            // Stamped-brass plate, not a form button: gradient face, embossed
+            // edges, and a punchier line than "reroll these 4."
             <button
+              className="bdh-press"
               onClick={onReroll}
               style={{
                 width: "100%",
                 maxWidth: GRID_MAX_WIDTH,
                 margin: "0 auto",
-                border: `1px solid ${t.gold}`,
+                border: `1px solid ${t.goldDark}`,
                 cursor: "pointer",
-                background: t.highlightBg,
-                color: t.highlightText,
+                background: "linear-gradient(180deg, #e6bd5e 0%, #d4a843 55%, #c19536 100%)",
+                color: "#3c2e08",
                 fontFamily: t.fontBody,
-                fontSize: "12px",
-                letterSpacing: "2px",
-                padding: "11px",
+                fontSize: "15px",
+                letterSpacing: "3px",
+                padding: "13px",
                 borderRadius: "2px",
                 flexShrink: 0,
+                textShadow: "0 1px 0 rgba(255,255,255,.35)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.18), 0 3px 0 #8a6a12",
               }}
             >
-              ⟳ REROLL THESE 4 &middot; {respins} LEFT
+              ⟳ ROLL FATE AGAIN &middot; {respins} TOKEN{respins === 1 ? "" : "S"} LEFT
             </button>
           )}
         </div>
