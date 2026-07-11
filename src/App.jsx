@@ -758,16 +758,18 @@ export default function App() {
                     backgroundSize: t.journalRuleSize,
                   }}
                 >
+                  {/* Wider than the reading column: the results plate is a
+                      landscape hero image, not prose — the reflection text
+                      below it re-narrows itself inside Results.jsx. */}
                   <div
                     style={{
-                      maxWidth: t.readingColumnWidth,
+                      maxWidth: "1120px",
                       width: "100%",
                       margin: "0 auto",
                       display: "flex",
                       flexDirection: "column",
                       flex: 1,
                       minHeight: 0,
-                      borderLeft: "1px solid rgba(198,40,40,.14)",
                     }}
                   >
                     <Results

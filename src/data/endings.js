@@ -274,6 +274,57 @@ export const ENDINGS = [
 
 export const SECRET_ENDINGS = ENDINGS.filter((e) => e.secret);
 
+// Illustrated closing plates (public/art/endings/<id>.jpg, 1024x682) for
+// the endings that have one. Endings absent here fall back to their inked
+// SVG sketch (ENDING_ART below) inside the results plate's center window —
+// same framing, hand-drawn instead of painted. Missing as of 2026-07-10:
+// barely_made_it, lost_on_the_sand, endless_road, path_remembered,
+// blood_on_the_sand.
+export const ENDING_IMAGES = {
+  military_rescue: "/art/endings/military_rescue.jpg",
+  signal_fire_rescue: "/art/endings/signal_fire_rescue.jpg",
+  ran_the_gauntlet: "/art/endings/ran_the_gauntlet.jpg",
+  vow_kept: "/art/endings/vow_kept.jpg",
+  one_more_song: "/art/endings/one_more_song.jpg",
+  clean_hands: "/art/endings/clean_hands.jpg",
+  ghost_of_the_highway: "/art/endings/ghost_of_the_highway.jpg",
+  the_long_road_home: "/art/endings/the_long_road_home.jpg",
+  paid_in_full: "/art/endings/paid_in_full.jpg",
+  price_of_kindness: "/art/endings/price_of_kindness.jpg",
+  name_remembered: "/art/endings/name_remembered.jpg",
+};
+
+// The results plate's handwritten margin note. The background plate used to
+// have "Radio finally answered… 27 days…" baked into the artwork, which
+// would have shown on every ending including deaths — it's been cloned out
+// of public/ending-bg.jpg and rendered live from here instead, so the note
+// always matches the run's actual ending. Short lines, present tense, the
+// survivor's own hand.
+export const ENDING_NOTES = {
+  military_rescue: (days) => `Radio finally answered. Real. Human. Alive. They found you — ${days} days after it all began.`,
+  signal_fire_rescue: (days) => `The fire on the bluff was the last thing left to try. The searchlight held. ${days} days.`,
+  ran_the_gauntlet: (days) => `The beach didn't want to let you cross. You crossed anyway. ${days} days.`,
+  barely_made_it: (days) => `You reached the pad on your knees. It still counts. ${days} days.`,
+  lost_on_the_sand: (days) => `Close enough to see the lights. The sand kept you. ${days} days.`,
+  endless_road: (days) => `${days} days. The calendar gave up before you did.`,
+  path_remembered: (days) => `Every kindness came back, right when it mattered. ${days} days.`,
+  blood_on_the_sand: (days) => `You took what the road wouldn't give. It got you here. ${days} days.`,
+  vow_kept: (days) => `Still wearing the ring. Still meaning it. ${days} days.`,
+  one_more_song: (days) => `Side A, third song. One more before the end. ${days} days.`,
+  clean_hands: (days) => `You never took what wasn't yours. Out here, that's a miracle. ${days} days.`,
+  ghost_of_the_highway: (days) => `The fast roads, the whole way. Nothing ever saw you coming. ${days} days.`,
+  the_long_road_home: (days) => `The quiet roads, the whole way. A little late — alive. ${days} days.`,
+  paid_in_full: (days) => `You took twice and gave back nothing. The road collected. ${days} days.`,
+  price_of_kindness: (days) => `You gave everything you could spare. Then it asked for more. ${days} days.`,
+  name_remembered: (days) => `They'll find the tags. They'll say your name out loud. ${days} days.`,
+};
+export const GENERIC_DEATH_NOTE = (days) => `The road kept you. ${days} days — more than most. Not enough.`;
+export const GENERIC_SURVIVAL_NOTE = (days) => `You made it out. ${days} days after it all began.`;
+export function endingNote(endingId, died, days) {
+  const known = endingId ? ENDING_NOTES[endingId] : null;
+  return known ? known(days) : died ? GENERIC_DEATH_NOTE(days) : GENERIC_SURVIVAL_NOTE(days);
+}
+
 // Sprint 3: every ending owns a hand-inked closing plate — the journal's
 // last illustration. Same sparse stroke vocabulary as the survivor sketches
 // and the intro plate (drawn into a stroked <g>, viewBox 0 0 160 90), keyed

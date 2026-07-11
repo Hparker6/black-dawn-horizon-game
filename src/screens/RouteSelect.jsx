@@ -3,15 +3,12 @@ import * as t from "../styles/tokens.js";
 import { ROUTE_CHOICE } from "../data/intro.js";
 
 // Timing for the multi-phase selection sequence: a beat after clicking
-// before the journal line appears, how long that line holds, then how long
-// the whole screen takes to dissolve before the existing route logic
-// (onChooseRoute) actually fires and swaps to the draft screen. Originally
-// 600/1500/550 (2.65s total) — read as a stall between clicking and the
-// draft screen actually arriving, so all three are cut roughly in half;
-// the journal line still gets a readable beat, it just doesn't hold the
-// player hostage to see the next page.
+// before the journal line appears, then how long the whole screen takes to
+// dissolve before the existing route logic (onChooseRoute) actually fires
+// and swaps to the draft screen. The journal line itself is not on a timer:
+// it holds until the player clicks anywhere, so it can be read at leisure
+// or clicked straight through.
 const SELECT_DELAY_MS = 300;
-const JOURNAL_HOLD_MS = 750;
 const DISSOLVE_MS = 350;
 
 // Measured against the source art (public/route-select.jpg) the same way
@@ -46,6 +43,11 @@ function RouteCard({ opt, phase, selectedFlag, onSelect }) {
   const disabled = phase !== "idle";
   const isSelected = selectedFlag === opt.flag;
   const faded = disabled && !isSelected;
+  // Once the journal beat starts, the chosen card's descriptive rows give
+  // way to the handwritten journal line — written on the card's own blank
+  // paper band. (It used to render at the bottom of the notebook image,
+  // where it landed on the dark page rim and was unreadable.)
+  const showJournal = isSelected && (phase === "journal" || phase === "leaving");
 
   return (
     <button
@@ -57,6 +59,10 @@ function RouteCard({ opt, phase, selectedFlag, onSelect }) {
         padding: 0,
         margin: 0,
         cursor: disabled ? "default" : "pointer",
+        // Once disabled, let clicks fall through to the screen container —
+        // that's what advances past the journal line (disabled buttons
+        // otherwise swallow the click without firing anything).
+        pointerEvents: disabled ? "none" : "auto",
         opacity: faded ? 0.32 : 1,
         transition: "opacity .4s ease",
         // Size container so the text rows below can scale in cqh — i.e.
@@ -91,25 +97,55 @@ function RouteCard({ opt, phase, selectedFlag, onSelect }) {
             the title against the illustration and the button against the
             card's bottom edge. Sized against the card, the six rows fit
             the band at any window size by construction. */}
-        <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "min(2.7cqh,17px)", letterSpacing: "2px", color: "#1a1208" }}>{opt.title}</div>
-        <div style={{ fontFamily: t.fontHand, fontWeight: 600, fontSize: "min(2.2cqh,14px)", color: "#3a2e1c" }}>{opt.tagline}</div>
-        <div style={{ fontFamily: t.fontHand, fontSize: "min(2cqh,13px)", lineHeight: 1.2, color: "#2a2013" }}>{opt.intro}</div>
-        <div style={{ fontFamily: t.fontHand, fontSize: "min(2cqh,13px)", lineHeight: 1.2, color: "#2a2013" }}>
-          {opt.fragments.join("  ")}
-        </div>
-        <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "min(1.8cqh,12px)", letterSpacing: "1px", color: t.goldDark }}>{opt.stat}</div>
-        <div
-          style={{
-            fontFamily: t.fontBody,
-            fontSize: "min(2cqh,13px)",
-            letterSpacing: ".5px",
-            color: "#1a1208",
-            borderBottom: "1px solid rgba(26,18,8,.5)",
-            paddingBottom: "1px",
-          }}
-        >
-          {opt.button}
-        </div>
+        {showJournal ? (
+          <div
+            style={{
+              fontFamily: t.fontHand,
+              fontWeight: 600,
+              fontSize: "min(2.6cqh,17px)",
+              lineHeight: 1.3,
+              color: "#1a1208",
+              animation: "bdhFadeUp .4s ease both",
+            }}
+          >
+            {opt.journalLine}
+            <div
+              style={{
+                fontFamily: t.fontBody,
+                fontWeight: 400,
+                fontSize: "min(1.7cqh,11px)",
+                letterSpacing: "1px",
+                color: "rgba(26,18,8,.55)",
+                marginTop: "3px",
+                animation: "bdhFadeUp .4s ease .6s both",
+              }}
+            >
+              click to continue
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "min(2.7cqh,17px)", letterSpacing: "2px", color: "#1a1208" }}>{opt.title}</div>
+            <div style={{ fontFamily: t.fontHand, fontWeight: 600, fontSize: "min(2.2cqh,14px)", color: "#3a2e1c" }}>{opt.tagline}</div>
+            <div style={{ fontFamily: t.fontHand, fontSize: "min(2cqh,13px)", lineHeight: 1.2, color: "#2a2013" }}>{opt.intro}</div>
+            <div style={{ fontFamily: t.fontHand, fontSize: "min(2cqh,13px)", lineHeight: 1.2, color: "#2a2013" }}>
+              {opt.fragments.join("  ")}
+            </div>
+            <div style={{ fontFamily: t.fontBody, fontWeight: 700, fontSize: "min(1.8cqh,12px)", letterSpacing: "1px", color: t.goldDark }}>{opt.stat}</div>
+            <div
+              style={{
+                fontFamily: t.fontBody,
+                fontSize: "min(2cqh,13px)",
+                letterSpacing: ".5px",
+                color: "#1a1208",
+                borderBottom: "1px solid rgba(26,18,8,.5)",
+                paddingBottom: "1px",
+              }}
+            >
+              {opt.button}
+            </div>
+          </>
+        )}
       </div>
     </button>
   );
@@ -123,21 +159,23 @@ export default function RouteSelect({ onChooseRoute }) {
     if (phase !== "idle") return;
     setSelectedFlag(flag);
     setPhase("chosen");
-    setTimeout(() => {
-      setPhase("journal");
-      setTimeout(() => {
-        setPhase("leaving");
-        setTimeout(() => onChooseRoute(flag), DISSOLVE_MS);
-      }, JOURNAL_HOLD_MS);
-    }, SELECT_DELAY_MS);
+    setTimeout(() => setPhase("journal"), SELECT_DELAY_MS);
   };
 
-  const selectedOpt = ROUTE_CHOICE.options.find((o) => o.flag === selectedFlag);
+  // The journal line holds indefinitely; any click on the screen dismisses
+  // it and starts the dissolve into the draft.
+  const handleAdvance = () => {
+    if (phase !== "journal") return;
+    setPhase("leaving");
+    setTimeout(() => onChooseRoute(selectedFlag), DISSOLVE_MS);
+  };
 
   return (
     <div
+      onClick={handleAdvance}
       style={{
         flex: 1,
+        cursor: phase === "journal" ? "pointer" : "default",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -176,27 +214,6 @@ export default function RouteSelect({ onChooseRoute }) {
           <RouteCard key={opt.flag} opt={opt} phase={phase} selectedFlag={selectedFlag} onSelect={handleSelect} />
         ))}
 
-        {(phase === "journal" || phase === "leaving") && selectedOpt && (
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              bottom: "3%",
-              transform: "translateX(-50%)",
-              width: "min(70%, 480px)",
-              textAlign: "center",
-              fontFamily: t.fontHand,
-              fontWeight: 600,
-              fontSize: "clamp(14px,1.9vw,19px)",
-              color: "#1a1208",
-              textShadow: "0 1px 0 rgba(255,255,255,.3)",
-              animation: "bdhFadeUp .4s ease both",
-              pointerEvents: "none",
-            }}
-          >
-            {selectedOpt.journalLine}
-          </div>
-        )}
       </div>
     </div>
   );

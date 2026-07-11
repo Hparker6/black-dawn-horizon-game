@@ -430,6 +430,25 @@ body {
   transform: scale(1.01);
 }
 
+/* Results plate (screens/Results.jsx): the stat block renders INSIDE the
+   background plate on wide screens and re-flows below it on phones, where
+   cqw-scaled type would be too small to read. Exactly one of the two is
+   visible at any width. */
+.bdh-plate-only {
+  display: none;
+}
+.bdh-flow-only {
+  display: block;
+}
+@media (min-width: 721px) {
+  .bdh-plate-only {
+    display: block;
+  }
+  .bdh-flow-only {
+    display: none;
+  }
+}
+
 /* Draft card grid (screens/Draft.jsx): the 2x2 slot-machine layout, shared
    by all three identity pages. */
 .bdh-draft-grid {
