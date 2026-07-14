@@ -143,8 +143,10 @@ export default function Results({ died, day, best, tier, endingId, newAch, newEn
   const item = identity.weapon ? identity.weapon.name.toLowerCase() : died ? "nothing" : "little";
   const known = endingId ? ENDING_RECAPS[endingId] : null;
   const recap = known && known.died === died ? known.recap(item, day) : died ? GENERIC_DEATH_RECAP(item, day) : GENERIC_SURVIVAL_RECAP(item, day);
-  const reflection = getEndingReflection(characterProfile);
-  const epithet = getIdentityEpithet(characterProfile);
+  // Both take endingId: a flag-proven ending (Clean Hands, Blood on the
+  // Sand, …) fixes the tier so recap and reflection can't contradict.
+  const reflection = getEndingReflection(characterProfile, endingId);
+  const epithet = getIdentityEpithet(characterProfile, endingId);
   const routeLabel = routeModifier(route).label;
   const note = endingNote(endingId, died, day);
 
@@ -192,11 +194,14 @@ export default function Results({ died, day, best, tier, endingId, newAch, newEn
     </div>
   );
 
+  // Deliberately darker/larger than the other caption text: this line is a
+  // reward notice, and at the old size/tint it was reading as a footnote
+  // half-lost against the page bottom.
   const recordBlock = (inPlate) =>
     recordLine && (
-      <div style={{ textAlign: "center" }}>
-        <span style={{ fontSize: inPlate ? "0.9cqw" : "9px", letterSpacing: "2px", color: "#6b6252" }}>ADDED TO THE RECORD — </span>
-        <span style={{ fontFamily: t.fontHand, fontWeight: 600, fontSize: inPlate ? "1.5cqw" : "16px", color: t.goldDark }}>{recordLine}</span>
+      <div style={{ textAlign: "center", padding: inPlate ? ".2cqw 0" : "2px 0" }}>
+        <span style={{ fontSize: inPlate ? "1.05cqw" : "10px", letterSpacing: "2px", color: "#4a4336", fontFamily: t.fontBody }}>ADDED TO THE RECORD — </span>
+        <span style={{ fontFamily: t.fontHand, fontWeight: 700, fontSize: inPlate ? "1.65cqw" : "17px", color: "#7d5e14" }}>{recordLine}</span>
       </div>
     );
 
@@ -264,18 +269,25 @@ export default function Results({ died, day, best, tier, endingId, newAch, newEn
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: "1120px",
+          maxWidth: "1280px",
           margin: "0 auto",
-          aspectRatio: "1024 / 796",
+          // The source art bakes in the journal's dark cover rim (33px L /
+          // 15px R / 48px T / 36px B of the 1024×796 art — verified against
+          // the actual pixels). Oversizing the background crops that rim
+          // out, so the box edge IS the paper edge — the plate reads as the
+          // page itself, not a framed photo of a journal sitting on the
+          // lined backdrop. Aspect ratio + every overlay coordinate below
+          // are remapped to the cropped 976×712 region.
+          aspectRatio: "976 / 712",
           backgroundImage: "url(/ending-bg.jpg)",
-          backgroundSize: "100% 100%",
+          backgroundSize: "104.9% 111.8%",
+          backgroundPosition: "68.1% 57.1%",
           containerType: "inline-size",
-          borderRadius: "4px",
-          boxShadow: "0 18px 40px -18px rgba(0,0,0,.6)",
+          boxShadow: "0 24px 50px -24px rgba(0,0,0,.55)",
         }}
       >
         {/* Headline — live text only; the plate has no baked title. */}
-        <div style={{ position: "absolute", left: "26%", width: "48%", top: "6.4cqw", textAlign: "center" }}>
+        <div style={{ position: "absolute", left: "23.9%", width: "50.4%", top: "1.8cqw", textAlign: "center" }}>
           <div style={{ fontFamily: t.fontDisplay, fontSize: "4.6cqw", lineHeight: 1, letterSpacing: ".18cqw", color: t.ink }}>{headline}</div>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: ".7cqw", marginTop: ".9cqw" }}>
             <span style={{ fontFamily: t.fontBody, fontSize: "5.6cqw", lineHeight: 1, color: t.blood }}>{day}</span>
@@ -288,9 +300,9 @@ export default function Results({ died, day, best, tier, endingId, newAch, newEn
         <div
           style={{
             position: "absolute",
-            left: "71%",
-            top: "14.5cqw",
-            width: "18.5%",
+            left: "71.1%",
+            top: "10.3cqw",
+            width: "19.4%",
             transform: "rotate(-2.5deg)",
             fontFamily: t.fontHand,
             fontWeight: 500,
@@ -307,10 +319,12 @@ export default function Results({ died, day, best, tier, endingId, newAch, newEn
             a long reflection grows the page rather than colliding. */}
         <div
           style={{
-            marginLeft: "26%",
-            width: "48%",
-            paddingTop: "19.5cqw",
-            paddingBottom: "3cqw",
+            marginLeft: "23.9%",
+            width: "50.4%",
+            paddingTop: "15.5cqw",
+            // Enough clearance that the record line + buttons sit on clean
+            // paper, never against the page's bottom edge.
+            paddingBottom: "3.6cqw",
             display: "flex",
             flexDirection: "column",
             gap: "1.05cqw",

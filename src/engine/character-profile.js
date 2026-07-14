@@ -45,37 +45,62 @@ export function checkMidRunReflection(profile, shownTierKeys) {
   return null;
 }
 
-// Same axis, a coarser cut for the one-time closing reflection — wide enough
-// that a run without a strong lean reads as "balanced" rather than tipping
-// on a single stray choice.
+// Same axis, a coarser cut for the one-time closing reflection. Note the
+// balanced tier is written as recognition — a player who made hard calls in
+// both directions should read as someone who held a line, never as
+// "forgettably average."
 const ENDING_REFLECTIONS = {
   compassion:
     "You kept slowing down for people who had nothing to give you back. It never once made you safer. You did it anyway, every time it came up again.",
   balanced:
-    "You helped when it cost little and hardened when it cost more. Most people do. The road never asked you to be anything else, and you never gave it a reason to notice you.",
+    "You gave when you could carry the cost and refused when it would have sunk you — and you were honest with yourself about which was which. That's not indifference. That's how a person stays a person out here.",
   survival:
     "Somewhere along the way you stopped asking whether someone deserved help before you decided against it. It kept you moving. You don't talk about the rest.",
 };
 
-export function getEndingReflection(profile) {
-  const v = (profile && profile.compassion) || 0;
-  if (v >= 3) return ENDING_REFLECTIONS.compassion;
-  if (v <= -3) return ENDING_REFLECTIONS.survival;
-  return ENDING_REFLECTIONS.balanced;
-}
-
 // Short title form of the same cut — the "WHO YOU BECAME" line on the
-// results cover page. Same thresholds as the prose reflection above so the
-// title and the paragraph beneath it can never disagree about who you were.
+// results cover page. Resolved through the same endingTier() as the prose
+// reflection so the title and the paragraph beneath it can never disagree
+// about who you were.
 const IDENTITY_EPITHETS = {
   compassion: "The One Who Still Stopped",
   balanced: "The One Who Endured",
   survival: "The One Who Kept Walking",
 };
 
-export function getIdentityEpithet(profile) {
+// Endings whose unlock conditions ARE a moral verdict. Clean Hands is
+// flag-proven conduct (helped the nursery kids, robbed no one) and its
+// recap paragraph says so in as many words — if the reflection beneath it
+// then called the run "balanced," the page would contradict itself. These
+// leans outrank the number: the flags are ground truth, the axis is only
+// an estimate built from however many tagged choices the run happened to
+// surface.
+const ENDING_MORAL_LEANS = {
+  clean_hands: "compassion",
+  path_remembered: "compassion",
+  price_of_kindness: "compassion",
+  blood_on_the_sand: "survival",
+  paid_in_full: "survival",
+};
+
+// The closing cut. The numeric bar is deliberately low (±2, was ±3):
+// impacts land in ±1 steps and most tagged choices are gated behind a
+// specific companion/keepsake/trait the run may simply not have, so even a
+// consistently kind run rarely banks more than a few points — at ±3,
+// genuinely compassionate runs were falling through to "balanced."
+function endingTier(profile, endingId) {
+  const lean = endingId && ENDING_MORAL_LEANS[endingId];
+  if (lean) return lean;
   const v = (profile && profile.compassion) || 0;
-  if (v >= 3) return IDENTITY_EPITHETS.compassion;
-  if (v <= -3) return IDENTITY_EPITHETS.survival;
-  return IDENTITY_EPITHETS.balanced;
+  if (v >= 2) return "compassion";
+  if (v <= -2) return "survival";
+  return "balanced";
+}
+
+export function getEndingReflection(profile, endingId) {
+  return ENDING_REFLECTIONS[endingTier(profile, endingId)];
+}
+
+export function getIdentityEpithet(profile, endingId) {
+  return IDENTITY_EPITHETS[endingTier(profile, endingId)];
 }

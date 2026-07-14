@@ -763,7 +763,7 @@ export default function App() {
                       below it re-narrows itself inside Results.jsx. */}
                   <div
                     style={{
-                      maxWidth: "1120px",
+                      maxWidth: "1280px",
                       width: "100%",
                       margin: "0 auto",
                       display: "flex",
